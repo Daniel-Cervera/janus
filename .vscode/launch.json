@@ -1,0 +1,45 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js — debug sin Docker",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/nextjs",
+      "serverReadyAction": {
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      }
+    },
+    {
+      "name": "Next.js — solo cliente Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000"
+    },
+    {
+      "name": "Odoo — attach al contenedor",
+      "type": "python",
+      "request": "attach",
+      "connect": { "host": "localhost", "port": "5678" },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/odoo/addons",
+          "remoteRoot": "/mnt/extra-addons"
+        }
+      ],
+      "justMyCode": false
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack (Next.js + Odoo debug)",
+      "configurations": [
+        "Next.js — debug sin Docker",
+        "Odoo — attach al contenedor"
+      ]
+    }
+  ]
+}

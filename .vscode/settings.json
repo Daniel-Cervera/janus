@@ -1,0 +1,15 @@
+{
+  "editor.formatOnSave": true,
+  "typescript.tsdk": "nextjs/node_modules/typescript/lib",
+  "eslint.workingDirectories": ["./nextjs"],
+  "python.defaultInterpreterPath": "/usr/bin/python3",
+  "files.exclude": {
+    "**/__pycache__": true,
+    "nextjs/.next": true,
+    "nextjs/node_modules": true
+  },
+  "search.exclude": {
+    "nextjs/node_modules": true,
+    "nextjs/.next": true
+  }
+}
