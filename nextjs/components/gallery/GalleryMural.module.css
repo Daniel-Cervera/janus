@@ -1,0 +1,133 @@
+/* components/gallery/GalleryMural.module.css */
+
+.section {
+  padding: 0;
+}
+
+/* ── Barra de conteo ────────────────────────────────────────────────── */
+.countBar {
+  padding: 12px 20px;
+  border-bottom: 1px solid #2c2c2c;
+}
+
+.count {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #6a6560;
+  font-family: 'Archivo', sans-serif;
+}
+
+.countOf {
+  color: #3f3d3a;
+}
+
+/* ── Mural masonry ──────────────────────────────────────────────────── */
+.mural {
+  padding: 10px;
+
+  /* CSS columns — sin JavaScript de layout */
+  columns: 4;
+  column-gap: 10px;
+}
+
+@media (max-width: 1400px) {
+  .mural { columns: 4; }
+}
+
+@media (max-width: 1023px) {
+  .mural { columns: 3; }
+}
+
+@media (max-width: 639px) {
+  .mural {
+    columns: 2;
+    column-gap: 6px;
+    padding: 6px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .mural { columns: 5; }
+}
+
+/* ── Sentinel y skeletons ───────────────────────────────────────────── */
+.sentinel {
+  min-height: 1px;
+  padding: 0 10px;
+}
+
+.loadingRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 0 0 10px;
+}
+
+@media (max-width: 1023px) {
+  .loadingRow { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 639px) {
+  .loadingRow {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+}
+
+.skeleton {
+  background: #181818;
+  animation: shimmer 1.6s ease-in-out infinite;
+  animation-fill-mode: both;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.7; }
+}
+
+/* ── Estado vacío ───────────────────────────────────────────────────── */
+.empty {
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.emptyTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 300;
+  color: #6a6560;
+  margin-bottom: 8px;
+}
+
+.emptySubtitle {
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #3f3d3a;
+}
+
+/* ── Marcador de fin ────────────────────────────────────────────────── */
+.endMarker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 24px 48px;
+}
+
+.endLine {
+  flex: 1;
+  height: 1px;
+  background: #2c2c2c;
+}
+
+.endText {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #3f3d3a;
+  font-family: 'Archivo', sans-serif;
+  white-space: nowrap;
+}
+

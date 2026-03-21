@@ -1,0 +1,3753 @@
+#!/bin/bash
+# Casa Janus — Instalador autocontenido de archivos Next.js
+# Ejecutar desde: /home/zkarrr/Documents/casa-janus
+# Uso: bash instalar-nextjs-standalone.sh
+
+set -e
+BASE="/home/zkarrr/Documents/casa-janus"
+GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
+log() { echo -e "${BLUE}▸${NC} $1"; }
+ok()  { echo -e "${GREEN}✓${NC} $1"; }
+
+cd "$BASE"
+
+log "Creando directorios..."
+mkdir -p nextjs/lib nextjs/hooks nextjs/styles nextjs/public/images
+mkdir -p nextjs/components/gallery nextjs/components/modal nextjs/components/commission
+mkdir -p nextjs/pages/galeria
+mkdir -p nextjs/pages/api/gallery nextjs/pages/api/artwork nextjs/pages/api/commission
+ok "Directorios listos"
+
+# ── package.json ──────────────────────────────────────────────
+log "package.json..."
+cat > nextjs/package.json << 'EOF'
+{
+  "name": "casa-janus",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev":        "next dev",
+    "build":      "next build",
+    "start":      "next start",
+    "lint":       "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next":      "14.2.5",
+    "react":     "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node":        "^20",
+    "@types/react":       "^18",
+    "@types/react-dom":   "^18",
+    "typescript":         "^5",
+    "eslint":             "^8",
+    "eslint-config-next": "14.2.5"
+  }
+}
+EOF
+ok "package.json"
+
+# ── tsconfig.json ─────────────────────────────────────────────
+log "tsconfig.json..."
+cat > nextjs/tsconfig.json << 'EOF'
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./*"] }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+EOF
+ok "tsconfig.json"
+
+# ── next.config.js ────────────────────────────────────────────
+log "next.config.js..."
+cat > nextjs/next.config.js << 'EOF'
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  output: 'standalone',
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'imagedelivery.net', pathname: '/**' },
+    ],
+  },
+}
+module.exports = nextConfig
+EOF
+ok "next.config.js"
+
+# ── .env.local ────────────────────────────────────────────────
+log ".env.local..."
+cat > nextjs/.env.local << 'EOF'
+ODOO_BASE_URL=http://localhost:8069
+ODOO_API_TOKEN=CAMBIAR_igual_que_CASA_JANUS_API_TOKEN
+NEXT_PUBLIC_CF_IMAGES_BASE=https://imagedelivery.net/TU_ACCOUNT_HASH
+NEXTJS_REVALIDATE_TOKEN=dev-token
+NEXTAUTH_URL=http://localhost:3000
+EOF
+ok ".env.local"
+
+log "nextjs/lib/types.ts..."
+cat > nextjs/lib/types.ts << 'EOF'
+/**
+ * lib/types.ts
+ * Tipos TypeScript que reflejan el esquema de Odoo de Casa Janus.
+ * Usados en todo el proyecto Next.js.
+ */
+
+// ── Primitivos ────────────────────────────────────────────────────────────────
+
+export type Availability = 'available' | 'reserved' | 'sold' | 'nfs'
+export type ExhibitionState = 'upcoming' | 'active' | 'past'
+export type PaperType = 'fine_art' | 'photo_gloss' | 'photo_matte' | 'canvas'
+
+export type BudgetRange =
+  | 'lt500' | '500_1500' | '1500_5k' | '5k_15k' | 'gt15k'
+
+// ── Imágenes Cloudflare ───────────────────────────────────────────────────────
+
+export interface CFImage {
+  cf_id: string
+  url: string | null
+  url_thumb: string | null
+  url_medium: string | null
+  url_large: string | null
+  is_primary?: boolean
+  alt_text?: string
+  sequence?: number
+}
+
+// ── Dimensiones de obra ───────────────────────────────────────────────────────
+
+export interface ArtworkDimensions {
+  width_cm: number
+  height_cm: number
+  depth_cm: number | null
+  label: string
+  /** Ratio height/width. Útil para calcular la altura en el mural masonry. */
+  aspect_ratio: number
+}
+
+// ── Técnica ───────────────────────────────────────────────────────────────────
+
+export interface TechniqueRef {
+  id: number
+  name: string
+  slug: string
+}
+
+export interface Technique extends TechniqueRef {
+  description: string
+  sequence: number
+  collection_count: number
+  artwork_count: number
+  collections?: CollectionSummary[]  // solo si with_collections=true
+}
+
+// ── Colección ─────────────────────────────────────────────────────────────────
+
+export interface CollectionRef {
+  id: number
+  name: string
+  slug: string
+}
+
+export interface CollectionSummary extends CollectionRef {
+  technique: TechniqueRef
+  artwork_count: number
+}
+
+export interface Collection extends CollectionSummary {
+  description: string
+  cover_image: string | null
+  cover_cf_id: string
+  year_start: number | null
+  year_end: number | null
+  sequence: number
+  artworks?: Artwork[]  // solo si with_artworks=true
+}
+
+// ── Obra ──────────────────────────────────────────────────────────────────────
+
+export interface Artwork {
+  id: number
+  name: string
+  slug: string
+  year: number
+  collection: CollectionRef
+  technique: TechniqueRef
+  medium: string
+  dimensions: ArtworkDimensions
+  description: string
+  /** Edición grabado. Ej: "3/12". Null si no aplica. */
+  edition: string | null
+  price: number
+  currency: string
+  availability: Availability
+  availability_label: string
+  is_featured: boolean
+  primary_image: CFImage
+  seo: {
+    title: string
+    description: string
+  }
+}
+
+/** Obra con imágenes adicionales y prints. Devuelto por /artwork/:slug */
+export interface ArtworkDetail extends Artwork {
+  images: CFImage[]
+  prints: PrintProduct[]
+}
+
+// ── Print / Reproducción ──────────────────────────────────────────────────────
+
+export interface PrintProduct {
+  id: number
+  size_label: string
+  paper_type: PaperType
+  paper_label: string
+  price: number
+  currency: string
+  stock_qty: number
+  in_stock: boolean
+  product_id: number | null
+}
+
+// ── Artista ───────────────────────────────────────────────────────────────────
+
+export interface CVItem {
+  year: number
+  category: 'solo' | 'group' | 'award' | 'residency' | 'publication' | 'other'
+  description: string
+  location: string
+}
+
+export interface Artist {
+  name: string
+  biography: string   // HTML
+  artist_statement: string
+  photo: CFImage
+  cv: CVItem[]
+}
+
+// ── Exposición ────────────────────────────────────────────────────────────────
+
+export interface Exhibition {
+  id: number
+  name: string
+  slug: string
+  date_start: string | null  // ISO date
+  date_end: string | null
+  location: string
+  description: string        // HTML
+  cover_image: string | null
+  state: ExhibitionState
+  artwork_count: number
+  artworks?: Artwork[]       // solo si include_artworks=true
+}
+
+// ── Encargo personalizado ─────────────────────────────────────────────────────
+
+export interface CommissionPayload {
+  partner_name: string
+  email: string
+  phone?: string
+  description: string
+  budget_range?: BudgetRange
+  technique_id?: number
+  ref_artwork_id?: number
+}
+
+export interface CommissionResponse {
+  success: boolean
+  message: string
+  id: number
+}
+
+// ── Respuestas de API ─────────────────────────────────────────────────────────
+
+export interface ListResponse<T> {
+  data: T[]
+  total: number
+  page?: number
+  per_page?: number
+  pages?: number
+}
+
+// ── Props de páginas ──────────────────────────────────────────────────────────
+
+export interface GalleryPageProps {
+  techniques: Technique[]
+  initialArtworks: ListResponse<Artwork>
+  activeTechniqueSlug?: string
+  activeCollectionSlug?: string
+}
+
+export interface ArtworkPageProps {
+  artwork: ArtworkDetail
+  relatedArtworks: Artwork[]
+}
+EOF
+ok "lib/types.ts"
+
+log "nextjs/lib/odoo-client.ts..."
+cat > nextjs/lib/odoo-client.ts << 'EOF'
+/**
+ * lib/odoo-client.ts
+ *
+ * Cliente tipado para la API headless de Casa Janus (Odoo).
+ * Usado desde getStaticProps / getServerSideProps en Next.js.
+ *
+ * Variables de entorno requeridas:
+ *   ODOO_BASE_URL=https://odoo.casajanus.com
+ *   ODOO_API_TOKEN=<token configurado en Odoo>
+ *   NEXT_PUBLIC_CF_IMAGES_BASE=https://imagedelivery.net/<HASH>
+ */
+
+import type {
+  Technique,
+  Collection,
+  Artwork,
+  ArtworkDetail,
+  Artist,
+  Exhibition,
+  CommissionPayload,
+  CommissionResponse,
+  ListResponse,
+} from './types'
+
+// ── Config ────────────────────────────────────────────────────────────────────
+
+const ODOO_BASE = process.env.ODOO_BASE_URL?.replace(/\/$/, '') ?? ''
+const API_TOKEN = process.env.ODOO_API_TOKEN ?? ''
+const API_PREFIX = `${ODOO_BASE}/api/v1`
+
+if (!ODOO_BASE || !API_TOKEN) {
+  console.warn('[odoo-client] ODOO_BASE_URL or ODOO_API_TOKEN is not set.')
+}
+
+// ── Cloudflare Images helpers ────────────────────────────────────────────────
+
+export type CFVariant = 'thumb' | 'medium' | 'large' | 'public'
+
+const CF_BASE = process.env.NEXT_PUBLIC_CF_IMAGES_BASE?.replace(/\/$/, '') ?? ''
+
+/**
+ * Construye una URL de Cloudflare Images con la variante deseada.
+ * Las variantes se configuran en el dashboard de Cloudflare Images:
+ *   - thumb:  400px ancho, WebP, calidad 80  → para mural masonry
+ *   - medium: 900px ancho, WebP, calidad 85  → para modal desktop
+ *   - large:  1600px ancho, WebP, calidad 90 → para lightbox / detalle
+ *   - public: tamaño original                → para descarga / SEO og:image
+ */
+export function cfImageUrl(cfId: string | null | undefined, variant: CFVariant = 'public'): string {
+  if (!cfId || !CF_BASE) return '/images/placeholder-obra.jpg'
+  return `${CF_BASE}/${cfId}/${variant}`
+}
+
+/**
+ * Genera el srcset completo de una obra para <img srcSet> en el mural.
+ * Next.js Image no se usa aquí para mantener control total sobre las URLs
+ * de Cloudflare y evitar double-proxy.
+ */
+export function artworkSrcSet(cfId: string | null | undefined): string {
+  if (!cfId) return ''
+  return [
+    `${cfImageUrl(cfId, 'thumb')} 400w`,
+    `${cfImageUrl(cfId, 'medium')} 900w`,
+    `${cfImageUrl(cfId, 'large')} 1600w`,
+  ].join(', ')
+}
+
+// ── HTTP client base ──────────────────────────────────────────────────────────
+
+interface FetchOptions {
+  params?: Record<string, string | number | boolean>
+  revalidate?: number  // ISR revalidation in seconds (Next.js fetch cache)
+  tags?: string[]      // On-demand revalidation tags
+}
+
+async function apiFetch<T>(endpoint: string, opts: FetchOptions = {}): Promise<T> {
+  const url = new URL(`${API_PREFIX}${endpoint}`)
+
+  if (opts.params) {
+    Object.entries(opts.params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) url.searchParams.set(k, String(v))
+    })
+  }
+
+  const res = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${API_TOKEN}`,
+      Accept: 'application/json',
+    },
+    // Next.js 14+ extended fetch for ISR
+    next: {
+      revalidate: opts.revalidate ?? 3600,  // 1h default
+      tags: opts.tags,
+    },
+  })
+
+  if (!res.ok) {
+    const errorBody = await res.text().catch(() => '')
+    throw new OdooAPIError(res.status, endpoint, errorBody)
+  }
+
+  return res.json() as Promise<T>
+}
+
+export class OdooAPIError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly endpoint: string,
+    public readonly body: string,
+  ) {
+    super(`Odoo API ${status} at ${endpoint}`)
+    this.name = 'OdooAPIError'
+  }
+}
+
+// ── API methods ───────────────────────────────────────────────────────────────
+
+/**
+ * Todas las técnicas con conteo de colecciones.
+ * Usada en: navegación, página /galeria
+ */
+export async function getTechniques(withCollections = false): Promise<Technique[]> {
+  const data = await apiFetch<ListResponse<Technique>>('/techniques', {
+    params: { with_collections: withCollections },
+    revalidate: 3600,
+    tags: ['techniques'],
+  })
+  return data.data
+}
+
+/**
+ * Colecciones filtradas por técnica.
+ * Usada en: sidebar de galería, página /galeria/[technique]
+ */
+export async function getCollections(opts: {
+  techniqueSlug?: string
+  techniqueId?: number
+  withArtworks?: boolean
+} = {}): Promise<Collection[]> {
+  const data = await apiFetch<ListResponse<Collection>>('/collections', {
+    params: {
+      ...(opts.techniqueSlug ? { technique_slug: opts.techniqueSlug } : {}),
+      ...(opts.techniqueId ? { technique_id: opts.techniqueId } : {}),
+      with_artworks: opts.withArtworks ?? false,
+    },
+    revalidate: 3600,
+    tags: ['collections', opts.techniqueSlug ? `technique:${opts.techniqueSlug}` : ''],
+  })
+  return data.data
+}
+
+/**
+ * Obras con paginación y filtros.
+ * Usada en: mural de galería, sección de obras destacadas
+ */
+export async function getArtworks(opts: {
+  techniqueSlug?: string
+  collectionSlug?: string
+  availability?: 'available' | 'sold' | 'reserved' | 'nfs'
+  featured?: boolean
+  page?: number
+  perPage?: number
+  order?: 'year_desc' | 'year_asc' | 'name_asc' | 'sequence'
+} = {}): Promise<ListResponse<Artwork>> {
+  return apiFetch<ListResponse<Artwork>>('/artworks', {
+    params: {
+      ...(opts.techniqueSlug ? { technique_slug: opts.techniqueSlug } : {}),
+      ...(opts.collectionSlug ? { collection_slug: opts.collectionSlug } : {}),
+      ...(opts.availability ? { availability: opts.availability } : {}),
+      ...(opts.featured !== undefined ? { featured: opts.featured } : {}),
+      page: opts.page ?? 1,
+      per_page: opts.perPage ?? 24,
+      order: opts.order ?? 'year_desc',
+    },
+    revalidate: 600,  // 10 min — obras cambian con más frecuencia que técnicas
+    tags: [
+      'artworks',
+      opts.techniqueSlug ? `technique:${opts.techniqueSlug}` : '',
+      opts.collectionSlug ? `collection:${opts.collectionSlug}` : '',
+    ].filter(Boolean),
+  })
+}
+
+/**
+ * Detalle completo de una obra por slug.
+ * Usada en: metadata de Open Graph, modal (via API route), página /obra/[slug]
+ */
+export async function getArtwork(slug: string): Promise<ArtworkDetail | null> {
+  try {
+    const data = await apiFetch<{ data: ArtworkDetail }>(`/artwork/${slug}`, {
+      revalidate: 600,
+      tags: [`artwork:${slug}`, 'artworks'],
+    })
+    return data.data
+  } catch (err) {
+    if (err instanceof OdooAPIError && err.status === 404) return null
+    throw err
+  }
+}
+
+/**
+ * Perfil del artista.
+ * Usada en: página /artista, footer, SEO
+ */
+export async function getArtist(): Promise<Artist | null> {
+  try {
+    const data = await apiFetch<{ data: Artist }>('/artist', {
+      revalidate: 86400,  // 24h — cambia muy raramente
+      tags: ['artist'],
+    })
+    return data.data
+  } catch (err) {
+    if (err instanceof OdooAPIError && err.status === 404) return null
+    throw err
+  }
+}
+
+/**
+ * Exposiciones.
+ * Usada en: página /exposiciones, homepage (próximas)
+ */
+export async function getExhibitions(opts: {
+  state?: 'upcoming' | 'active' | 'past' | 'all'
+  limit?: number
+} = {}): Promise<Exhibition[]> {
+  const data = await apiFetch<ListResponse<Exhibition>>('/exhibitions', {
+    params: {
+      state: opts.state ?? 'all',
+      limit: opts.limit ?? 20,
+    },
+    revalidate: 3600,
+    tags: ['exhibitions'],
+  })
+  return data.data
+}
+
+/**
+ * Envía un encargo personalizado.
+ * Usada en: formulario /encargos
+ * No usa Bearer token (ruta pública POST).
+ */
+export async function submitCommission(
+  payload: CommissionPayload,
+): Promise<CommissionResponse> {
+  const res = await fetch(`${API_PREFIX}/commission`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new OdooAPIError(res.status, '/commission', JSON.stringify(body))
+  }
+  return res.json()
+}
+
+// ── Static path helpers (para getStaticPaths en Next.js) ─────────────────────
+
+/** Todos los slugs de obra para generateStaticParams / getStaticPaths */
+export async function getAllArtworkSlugs(): Promise<string[]> {
+  // Paginamos internamente para obtener todos
+  const results: string[] = []
+  let page = 1
+  let fetched = 0
+  let total = Infinity
+
+  while (fetched < total) {
+    const res = await getArtworks({ page, perPage: 100 })
+    total = res.total
+    res.data.forEach(a => results.push(a.slug))
+    fetched += res.data.length
+    page++
+    if (res.data.length === 0) break
+  }
+  return results
+}
+
+/** Todos los slugs de técnica para rutas estáticas */
+export async function getAllTechniqueSlugs(): Promise<string[]> {
+  const techniques = await getTechniques()
+  return techniques.map(t => t.slug)
+}
+EOF
+ok "lib/odoo-client.ts"
+
+log "nextjs/hooks/useArtworkModal.ts..."
+cat > nextjs/hooks/useArtworkModal.ts << 'EOF'
+/**
+ * hooks/useArtworkModal.ts
+ *
+ * Gestiona el estado del modal de obra:
+ *  - Abre/cierra sin cambiar de página (shallow routing)
+ *  - Actualiza la URL con ?obra=<slug> para que sea compartible
+ *  - Carga el detalle de obra vía /api/artwork/[slug]
+ *  - Soporte de teclado: Escape cierra, ← → navegan entre obras del mural
+ *  - Bloquea scroll del body cuando el modal está abierto
+ *  - Precarga la siguiente obra en background
+ */
+
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/router'
+import type { ArtworkDetail, Artwork } from '@/lib/types'
+
+interface UseArtworkModalReturn {
+  isOpen: boolean
+  isLoading: boolean
+  artwork: ArtworkDetail | null
+  error: string | null
+  openModal: (slug: string, index?: number) => void
+  closeModal: () => void
+  navigateModal: (direction: 1 | -1) => void
+  currentIndex: number
+}
+
+export function useArtworkModal(
+  artworks: Artwork[],
+): UseArtworkModalReturn {
+  const router = useRouter()
+  const [isOpen, setIsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [artwork, setArtwork] = useState<ArtworkDetail | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [currentIndex, setCurrentIndex] = useState(-1)
+
+  // Ref para el abort controller — cancela fetch si el modal se cierra rápido
+  const abortRef = useRef<AbortController | null>(null)
+  // Ref para guardar URL previa (para restaurar al cerrar)
+  const prevUrlRef = useRef<string>('')
+
+  // ── Fetch del detalle de obra ─────────────────────────────────────────────
+  const fetchArtwork = useCallback(async (slug: string) => {
+    abortRef.current?.abort()
+    abortRef.current = new AbortController()
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/artwork/${slug}`, {
+        signal: abortRef.current.signal,
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setArtwork(data.data)
+    } catch (err: unknown) {
+      if ((err as Error).name === 'AbortError') return
+      setError('No pudimos cargar los detalles de esta obra.')
+      console.error('[useArtworkModal]', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // ── Precarga de obra adyacente ────────────────────────────────────────────
+  const prefetchAdjacent = useCallback((idx: number) => {
+    const next = artworks[idx + 1]
+    const prev = artworks[idx - 1]
+    ;[next, prev].filter(Boolean).forEach(a => {
+      // Prefetch silencioso vía link rel=prefetch
+      const link = document.createElement('link')
+      link.rel = 'prefetch'
+      link.href = `/api/artwork/${a.slug}`
+      document.head.appendChild(link)
+    })
+  }, [artworks])
+
+  // ── Abrir modal ───────────────────────────────────────────────────────────
+  const openModal = useCallback((slug: string, index?: number) => {
+    prevUrlRef.current = router.asPath
+
+    const idx = index ?? artworks.findIndex(a => a.slug === slug)
+    setCurrentIndex(idx)
+    setIsOpen(true)
+
+    // Shallow routing: actualiza URL sin recargar página
+    router.push(
+      { pathname: router.pathname, query: { ...router.query, obra: slug } },
+      undefined,
+      { shallow: true, scroll: false },
+    )
+
+    fetchArtwork(slug)
+    if (idx >= 0) prefetchAdjacent(idx)
+
+    // Bloquear scroll del body
+    document.body.style.overflow = 'hidden'
+    document.body.style.paddingRight = `${getScrollbarWidth()}px`
+  }, [router, artworks, fetchArtwork, prefetchAdjacent])
+
+  // ── Cerrar modal ──────────────────────────────────────────────────────────
+  const closeModal = useCallback(() => {
+    setIsOpen(false)
+    setArtwork(null)
+    setCurrentIndex(-1)
+    abortRef.current?.abort()
+
+    // Restaurar URL sin el parámetro ?obra=
+    const { obra: _obra, ...restQuery } = router.query
+    router.push(
+      { pathname: router.pathname, query: restQuery },
+      undefined,
+      { shallow: true, scroll: false },
+    )
+
+    // Restaurar scroll
+    document.body.style.overflow = ''
+    document.body.style.paddingRight = ''
+  }, [router])
+
+  // ── Navegar entre obras ───────────────────────────────────────────────────
+  const navigateModal = useCallback((direction: 1 | -1) => {
+    if (artworks.length === 0) return
+    const nextIdx = (currentIndex + direction + artworks.length) % artworks.length
+    const nextArtwork = artworks[nextIdx]
+    if (!nextArtwork) return
+
+    setCurrentIndex(nextIdx)
+    setArtwork(null)
+
+    router.replace(
+      { pathname: router.pathname, query: { ...router.query, obra: nextArtwork.slug } },
+      undefined,
+      { shallow: true, scroll: false },
+    )
+
+    fetchArtwork(nextArtwork.slug)
+    prefetchAdjacent(nextIdx)
+  }, [artworks, currentIndex, router, fetchArtwork, prefetchAdjacent])
+
+  // ── Abrir desde URL directa ───────────────────────────────────────────────
+  // Si la página carga con ?obra= en la URL (link compartido)
+  useEffect(() => {
+    const slug = router.query.obra as string | undefined
+    if (slug && !isOpen) {
+      const idx = artworks.findIndex(a => a.slug === slug)
+      setCurrentIndex(idx)
+      setIsOpen(true)
+      fetchArtwork(slug)
+      document.body.style.overflow = 'hidden'
+      document.body.style.paddingRight = `${getScrollbarWidth()}px`
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady])
+
+  // ── Teclado ───────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape')      closeModal()
+      if (e.key === 'ArrowRight')  navigateModal(1)
+      if (e.key === 'ArrowLeft')   navigateModal(-1)
+    }
+
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [isOpen, closeModal, navigateModal])
+
+  // ── Botón atrás del navegador cierra el modal ─────────────────────────────
+  useEffect(() => {
+    const handleRouteChange = () => {
+      if (isOpen && !router.query.obra) {
+        setIsOpen(false)
+        setArtwork(null)
+        document.body.style.overflow = ''
+        document.body.style.paddingRight = ''
+      }
+    }
+    router.events.on('routeChangeComplete', handleRouteChange)
+    return () => router.events.off('routeChangeComplete', handleRouteChange)
+  }, [isOpen, router])
+
+  return {
+    isOpen, isLoading, artwork, error,
+    openModal, closeModal, navigateModal, currentIndex,
+  }
+}
+
+function getScrollbarWidth(): number {
+  if (typeof window === 'undefined') return 0
+  return window.innerWidth - document.documentElement.clientWidth
+}
+EOF
+ok "hooks/useArtworkModal.ts"
+
+log "nextjs/hooks/useMural.ts..."
+cat > nextjs/hooks/useMural.ts << 'EOF'
+/**
+ * hooks/useMural.ts
+ *
+ * Gestiona la carga incremental del mural masonry:
+ *  - Primera carga: 24 obras (desde getStaticProps, sin JS)
+ *  - Carga adicional: batches de 12 vía IntersectionObserver
+ *  - Filtros reactivos: al cambiar técnica/colección, resetea y recarga
+ *  - Estado de carga y error
+ *  - Evita requests duplicados con un flag de "fetching"
+ */
+
+import { useState, useEffect, useRef, useCallback } from 'react'
+import type { Artwork, ListResponse } from '@/lib/types'
+
+interface UseMuralOptions {
+  initialData: ListResponse<Artwork>
+  techniqueSlug?: string
+  collectionSlug?: string
+  perPage?: number
+}
+
+interface UseMuralReturn {
+  artworks: Artwork[]
+  total: number
+  hasMore: boolean
+  isLoadingMore: boolean
+  sentinelRef: React.RefObject<HTMLDivElement>
+}
+
+export function useMural({
+  initialData,
+  techniqueSlug,
+  collectionSlug,
+  perPage = 12,
+}: UseMuralOptions): UseMuralReturn {
+  const [artworks, setArtworks] = useState<Artwork[]>(initialData.data)
+  const [total, setTotal] = useState(initialData.total)
+  const [page, setPage] = useState(1)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const fetchingRef = useRef(false)
+
+  const hasMore = artworks.length < total
+
+  // ── Reset cuando cambian los filtros ──────────────────────────────────────
+  useEffect(() => {
+    setArtworks(initialData.data)
+    setTotal(initialData.total)
+    setPage(1)
+  }, [initialData, techniqueSlug, collectionSlug])
+
+  // ── Cargar siguiente página ───────────────────────────────────────────────
+  const loadMore = useCallback(async () => {
+    if (fetchingRef.current || !hasMore) return
+    fetchingRef.current = true
+    setIsLoadingMore(true)
+
+    const nextPage = page + 1
+
+    try {
+      const params = new URLSearchParams({
+        page:     String(nextPage),
+        per_page: String(perPage),
+      })
+      if (techniqueSlug)  params.set('technique',  techniqueSlug)
+      if (collectionSlug) params.set('collection', collectionSlug)
+
+      const res = await fetch(`/api/gallery?${params}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+      const data: { artworks: ListResponse<Artwork> } = await res.json()
+
+      setArtworks(prev => {
+        // Deduplicar por id por si la paginación de Odoo devuelve solapados
+        const existingIds = new Set(prev.map(a => a.id))
+        const fresh = data.artworks.data.filter(a => !existingIds.has(a.id))
+        return [...prev, ...fresh]
+      })
+      setTotal(data.artworks.total)
+      setPage(nextPage)
+    } catch (err) {
+      console.error('[useMural] loadMore error:', err)
+    } finally {
+      setIsLoadingMore(false)
+      fetchingRef.current = false
+    }
+  }, [hasMore, page, perPage, techniqueSlug, collectionSlug])
+
+  // ── IntersectionObserver en el sentinel ───────────────────────────────────
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadMore()
+        }
+      },
+      {
+        // Dispara cuando el sentinel está a 300px de entrar al viewport
+        // Da tiempo para que las imágenes carguen antes de ser visibles
+        rootMargin: '300px',
+        threshold: 0,
+      },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [loadMore])
+
+  return { artworks, total, hasMore, isLoadingMore, sentinelRef }
+}
+EOF
+ok "hooks/useMural.ts"
+
+log "nextjs/styles/globals.css..."
+cat > nextjs/styles/globals.css << 'EOF'
+/* styles/globals.css
+ * Sistema de diseño de Casa Janus
+ * Paleta: Negro profundo · Rojo · Blanco hueso
+ * Tipografía: Cormorant Garamond (display) + Archivo (body)
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Archivo:wght@300;400;500;600&display=swap');
+
+/* ── Tokens de diseño ─────────────────────────────────────────────── */
+:root {
+  /* Negros */
+  --cj-black:       #090909;
+  --cj-black-soft:  #111111;
+  --cj-surface:     #181818;
+  --cj-surface-2:   #202020;
+  --cj-border:      #2c2c2c;
+  --cj-border-2:    #3a3a3a;
+
+  /* Rojos — identidad */
+  --cj-red:         #c41e1e;
+  --cj-red-bright:  #e02424;
+  --cj-red-dim:     #8b1a1a;
+  --cj-red-ghost:   rgba(196, 30, 30, 0.08);
+
+  /* Blancos */
+  --cj-white:       #f4efe9;
+  --cj-white-dim:   #c6bdb3;
+  --cj-white-ghost: rgba(244, 239, 233, 0.06);
+
+  /* Grises */
+  --cj-gray:        #6a6560;
+  --cj-gray-dim:    #3f3d3a;
+
+  /* Tipografía */
+  --font-display:   'Cormorant Garamond', Georgia, serif;
+  --font-body:      'Archivo', system-ui, sans-serif;
+
+  /* Transiciones */
+  --ease-out:       cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:    cubic-bezier(0.45, 0, 0.55, 1);
+
+  /* Z-index */
+  --z-nav:          100;
+  --z-modal-bg:     200;
+  --z-modal:        210;
+  --z-toast:        300;
+}
+
+/* ── Reset ────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--cj-black);
+  color: var(--cj-white);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar personalizada ──────────────────────────────────────── */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: var(--cj-black); }
+::-webkit-scrollbar-thumb  { background: var(--cj-border-2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--cj-gray-dim); }
+
+/* ── Selección de texto ───────────────────────────────────────────── */
+::selection {
+  background: var(--cj-red);
+  color: var(--cj-white);
+}
+
+/* ── Tipografía base ──────────────────────────────────────────────── */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--cj-white);
+}
+
+p { color: var(--cj-white-dim); }
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img, video {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* ── Clases utilitarias ───────────────────────────────────────────── */
+.label-xs {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.label-sm {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+.display-serif {
+  font-family: var(--font-display);
+  font-weight: 300;
+}
+
+.display-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+}
+
+/* ── Focus visible ────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 1px solid var(--cj-red);
+  outline-offset: 2px;
+}
+
+/* ── Animación de entrada global ──────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Reducción de movimiento ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+EOF
+ok "styles/globals.css"
+
+log "nextjs/components/gallery/ArtworkCard.tsx..."
+mkdir -p nextjs/components/gallery
+cat > nextjs/components/gallery/ArtworkCard.tsx << 'EOF'
+/**
+ * components/gallery/ArtworkCard.tsx
+ *
+ * Tarjeta individual del mural masonry.
+ * Diseño: imagen a sangre, hover revela título y año desde abajo.
+ * Imagen con lazy loading nativo + srcset dinámico de Cloudflare.
+ * El aspect-ratio se reserva con CSS para evitar CLS.
+ */
+
+import { useCallback } from 'react'
+import styles from './ArtworkCard.module.css'
+import { cfImageUrl, artworkSrcSet } from '@/lib/odoo-client'
+import type { Artwork } from '@/lib/types'
+
+interface ArtworkCardProps {
+  artwork: Artwork
+  index: number
+  onOpen: (slug: string, index: number) => void
+}
+
+// Tamaños responsivos del mural:
+// móvil (< 640px): 2 columnas → ~50vw
+// tablet (640-1023px): 3 columnas → ~33vw
+// desktop (≥ 1024px): 4 columnas → ~25vw
+const IMG_SIZES = '(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw'
+
+// Etiqueta de disponibilidad
+const AVAILABILITY_CONFIG: Record<string, { label: string; color: string }> = {
+  available: { label: 'Disponible',  color: '#22c55e' },
+  reserved:  { label: 'Reservada',   color: '#f59e0b' },
+  sold:      { label: 'Vendida',     color: '#ef4444' },
+  nfs:       { label: 'No en venta', color: '#6b7280' },
+}
+
+export default function ArtworkCard({ artwork, index, onOpen }: ArtworkCardProps) {
+  const avail = AVAILABILITY_CONFIG[artwork.availability] ?? AVAILABILITY_CONFIG.nfs
+  const cfId  = artwork.primary_image?.cf_id
+  const { aspect_ratio } = artwork.dimensions
+
+  const handleClick = useCallback(() => {
+    onOpen(artwork.slug, index)
+  }, [artwork.slug, index, onOpen])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onOpen(artwork.slug, index)
+    }
+  }, [artwork.slug, index, onOpen])
+
+  return (
+    <article
+      className={styles.card}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={`Ver ${artwork.name}, ${artwork.year}`}
+      style={{ '--anim-delay': `${Math.min(index * 40, 400)}ms` } as React.CSSProperties}
+    >
+      {/* Contenedor de imagen con aspect-ratio reservado */}
+      <div
+        className={styles.imageWrap}
+        style={{ aspectRatio: `1 / ${aspect_ratio}` }}
+      >
+        <img
+          src={cfImageUrl(cfId, 'medium')}
+          srcSet={artworkSrcSet(cfId)}
+          sizes={IMG_SIZES}
+          alt={artwork.name}
+          className={styles.image}
+          loading={index < 6 ? 'eager' : 'lazy'}
+          decoding="async"
+          fetchPriority={index < 6 ? 'high' : undefined}
+          width={400}
+          height={Math.round(400 * aspect_ratio)}
+        />
+
+        {/* Overlay de hover */}
+        <div className={styles.overlay} aria-hidden="true" />
+
+        {/* Info que emerge al hover */}
+        <div className={styles.info}>
+          <div className={styles.infoInner}>
+            <p className={styles.title}>{artwork.name}</p>
+            <div className={styles.meta}>
+              <span className={styles.year}>{artwork.year}</span>
+              {artwork.availability !== 'nfs' && (
+                <span
+                  className={styles.availDot}
+                  style={{ '--dot-color': avail.color } as React.CSSProperties}
+                  aria-label={avail.label}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Badge destacada */}
+        {artwork.is_featured && (
+          <div className={styles.featuredBadge} aria-label="Obra destacada">
+            <span className={styles.featuredText}>destacada</span>
+          </div>
+        )}
+      </div>
+    </article>
+  )
+}
+
+EOF
+ok "components/gallery/ArtworkCard.tsx"
+
+log "nextjs/components/gallery/ArtworkCard.module.css..."
+mkdir -p nextjs/components/gallery
+cat > nextjs/components/gallery/ArtworkCard.module.css << 'EOF'
+/* components/gallery/ArtworkCard.module.css */
+
+.card {
+  display: block;
+  break-inside: avoid;
+  margin-bottom: 10px;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+
+  /* Entrada animada con stagger por índice */
+  animation: cardReveal 0.55s var(--ease-out, cubic-bezier(0.16,1,0.3,1)) both;
+  animation-delay: var(--anim-delay, 0ms);
+}
+
+@keyframes cardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.imageWrap {
+  position: relative;
+  overflow: hidden;
+  background: #1a1a1a;
+  /* El aspect-ratio se pasa inline desde el componente */
+}
+
+/* ── Imagen ─────────────────────────────────────────────────────────── */
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Previene flicker en Safari */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+.card:hover .image,
+.card:focus-visible .image {
+  transform: scale(1.04);
+}
+
+/* ── Overlay ────────────────────────────────────────────────────────── */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 40%,
+    rgba(0, 0, 0, 0.78) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.card:hover .overlay,
+.card:focus-visible .overlay {
+  opacity: 1;
+}
+
+/* ── Info emerge desde abajo ────────────────────────────────────────── */
+.info {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.infoInner {
+  padding: 14px 13px;
+  width: 100%;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover .infoInner,
+.card:focus-visible .infoInner {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 15px;
+  font-weight: 400;
+  font-style: italic;
+  color: #f4efe9;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+.year {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #c41e1e;
+  font-family: 'Archivo', sans-serif;
+}
+
+.availDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--dot-color, #22c55e);
+  flex-shrink: 0;
+}
+
+/* ── Badge destacada ────────────────────────────────────────────────── */
+.featuredBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 8px;
+  background: rgba(196, 30, 30, 0.85);
+  backdrop-filter: blur(4px);
+}
+
+.featuredText {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f4efe9;
+  font-family: 'Archivo', sans-serif;
+  font-weight: 500;
+}
+
+/* ── Focus visible ring ─────────────────────────────────────────────── */
+.card:focus-visible .imageWrap {
+  outline: 1px solid #c41e1e;
+  outline-offset: 2px;
+}
+
+/* ── Reducción de movimiento ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+    opacity: 1;
+  }
+  .image {
+    transition: none;
+  }
+}
+
+EOF
+ok "components/gallery/ArtworkCard.module.css"
+
+log "nextjs/components/gallery/GalleryMural.tsx..."
+mkdir -p nextjs/components/gallery
+cat > nextjs/components/gallery/GalleryMural.tsx << 'EOF'
+/**
+ * components/gallery/GalleryMural.tsx
+ *
+ * El mural masonry de la galería.
+ * Implementado con CSS columns (sin JS de layout) para rendimiento óptimo.
+ * Carga incremental vía IntersectionObserver desde useMural.
+ *
+ * Columnas:
+ *  - 2 columnas en móvil (< 640px)
+ *  - 3 columnas en tablet (640-1023px)
+ *  - 4 columnas en desktop (≥ 1024px)
+ *  - 5 columnas en pantallas > 1400px (obras de grabado, pequeñas)
+ */
+
+import { memo } from 'react'
+import styles from './GalleryMural.module.css'
+import ArtworkCard from './ArtworkCard'
+import { useMural } from '@/hooks/useMural'
+import type { Artwork, ListResponse } from '@/lib/types'
+
+interface GalleryMuralProps {
+  initialData: ListResponse<Artwork>
+  techniqueSlug?: string
+  collectionSlug?: string
+  onArtworkClick: (slug: string, index: number) => void
+}
+
+function GalleryMural({
+  initialData,
+  techniqueSlug,
+  collectionSlug,
+  onArtworkClick,
+}: GalleryMuralProps) {
+  const { artworks, total, hasMore, isLoadingMore, sentinelRef } = useMural({
+    initialData,
+    techniqueSlug,
+    collectionSlug,
+    perPage: 12,
+  })
+
+  if (artworks.length === 0) {
+    return (
+      <div className={styles.empty}>
+        <p className={styles.emptyTitle}>Sin obras en esta selección</p>
+        <p className={styles.emptySubtitle}>Prueba con otra técnica o colección</p>
+      </div>
+    )
+  }
+
+  return (
+    <section className={styles.section} aria-label="Galería de obras">
+      {/* Contador */}
+      <div className={styles.countBar}>
+        <span className={styles.count}>
+          {artworks.length}
+          {hasMore && <span className={styles.countOf}> de {total}</span>}
+          {' '}obras
+        </span>
+      </div>
+
+      {/* Mural CSS columns */}
+      <div className={styles.mural}>
+        {artworks.map((artwork, index) => (
+          <ArtworkCard
+            key={artwork.id}
+            artwork={artwork}
+            index={index}
+            onOpen={onArtworkClick}
+          />
+        ))}
+      </div>
+
+      {/* Sentinel para IntersectionObserver */}
+      {hasMore && (
+        <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true">
+          {isLoadingMore && (
+            <div className={styles.loadingRow}>
+              {[0, 1, 2, 3].map(i => (
+                <div
+                  key={i}
+                  className={styles.skeleton}
+                  style={{
+                    height: `${160 + Math.random() * 100}px`,
+                    animationDelay: `${i * 120}ms`,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Fin del mural */}
+      {!hasMore && artworks.length > 0 && (
+        <div className={styles.endMarker} aria-hidden="true">
+          <div className={styles.endLine} />
+          <span className={styles.endText}>fin de la colección</span>
+          <div className={styles.endLine} />
+        </div>
+      )}
+    </section>
+  )
+}
+
+export default memo(GalleryMural)
+
+EOF
+ok "components/gallery/GalleryMural.tsx"
+
+log "nextjs/components/gallery/GalleryMural.module.css..."
+mkdir -p nextjs/components/gallery
+cat > nextjs/components/gallery/GalleryMural.module.css << 'EOF'
+/* components/gallery/GalleryMural.module.css */
+
+.section {
+  padding: 0;
+}
+
+/* ── Barra de conteo ────────────────────────────────────────────────── */
+.countBar {
+  padding: 12px 20px;
+  border-bottom: 1px solid #2c2c2c;
+}
+
+.count {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #6a6560;
+  font-family: 'Archivo', sans-serif;
+}
+
+.countOf {
+  color: #3f3d3a;
+}
+
+/* ── Mural masonry ──────────────────────────────────────────────────── */
+.mural {
+  padding: 10px;
+
+  /* CSS columns — sin JavaScript de layout */
+  columns: 4;
+  column-gap: 10px;
+}
+
+@media (max-width: 1400px) {
+  .mural { columns: 4; }
+}
+
+@media (max-width: 1023px) {
+  .mural { columns: 3; }
+}
+
+@media (max-width: 639px) {
+  .mural {
+    columns: 2;
+    column-gap: 6px;
+    padding: 6px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .mural { columns: 5; }
+}
+
+/* ── Sentinel y skeletons ───────────────────────────────────────────── */
+.sentinel {
+  min-height: 1px;
+  padding: 0 10px;
+}
+
+.loadingRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 0 0 10px;
+}
+
+@media (max-width: 1023px) {
+  .loadingRow { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 639px) {
+  .loadingRow {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+}
+
+.skeleton {
+  background: #181818;
+  animation: shimmer 1.6s ease-in-out infinite;
+  animation-fill-mode: both;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.7; }
+}
+
+/* ── Estado vacío ───────────────────────────────────────────────────── */
+.empty {
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.emptyTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 300;
+  color: #6a6560;
+  margin-bottom: 8px;
+}
+
+.emptySubtitle {
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #3f3d3a;
+}
+
+/* ── Marcador de fin ────────────────────────────────────────────────── */
+.endMarker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 24px 48px;
+}
+
+.endLine {
+  flex: 1;
+  height: 1px;
+  background: #2c2c2c;
+}
+
+.endText {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #3f3d3a;
+  font-family: 'Archivo', sans-serif;
+  white-space: nowrap;
+}
+
+EOF
+ok "components/gallery/GalleryMural.module.css"
+
+log "nextjs/components/modal/ArtworkModal.tsx..."
+mkdir -p nextjs/components/modal
+cat > nextjs/components/modal/ArtworkModal.tsx << 'EOF'
+/**
+ * components/modal/ArtworkModal.tsx
+ *
+ * Modal de detalle de obra. Características:
+ *  - No cambia de página — usa shallow routing (?obra=<slug>)
+ *  - Imagen principal con zoom on-hover
+ *  - Galería de imágenes adicionales (thumbnails)
+ *  - Información completa: técnica, dimensiones, edición, año
+ *  - Precio y disponibilidad
+ *  - CTA: Adquirir obra original | Ver prints/reproducciones
+ *  - Navegación ← → entre obras del mural
+ *  - Cierre con Escape, clic en backdrop, botón ✕
+ *  - Focus trap para accesibilidad
+ *  - Animación de entrada/salida
+ */
+
+import { useEffect, useRef, useState } from 'react'
+import styles from './ArtworkModal.module.css'
+import { cfImageUrl } from '@/lib/odoo-client'
+import type { ArtworkDetail, PrintProduct } from '@/lib/types'
+
+interface ArtworkModalProps {
+  isOpen:        boolean
+  isLoading:     boolean
+  artwork:       ArtworkDetail | null
+  error:         string | null
+  currentIndex:  number
+  totalArtworks: number
+  onClose:       () => void
+  onNavigate:    (direction: 1 | -1) => void
+}
+
+const AVAILABILITY_LABELS: Record<string, { label: string; color: string }> = {
+  available: { label: 'Disponible',  color: '#22c55e' },
+  reserved:  { label: 'Reservada',   color: '#f59e0b' },
+  sold:      { label: 'Vendida',     color: '#ef4444' },
+  nfs:       { label: 'No en venta', color: '#6b7280' },
+}
+
+export default function ArtworkModal({
+  isOpen, isLoading, artwork, error,
+  currentIndex, totalArtworks,
+  onClose, onNavigate,
+}: ArtworkModalProps) {
+  const [activeImageIdx, setActiveImageIdx] = useState(0)
+  const [showPrints, setShowPrints] = useState(false)
+  const backdropRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Resetear imagen activa cuando cambia la obra
+  useEffect(() => {
+    setActiveImageIdx(0)
+    setShowPrints(false)
+  }, [artwork?.id])
+
+  // Focus trap: enfocar el botón de cerrar al abrir
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => closeButtonRef.current?.focus(), 50)
+    }
+  }, [isOpen])
+
+  // Clic en backdrop cierra
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === backdropRef.current) onClose()
+  }
+
+  if (!isOpen) return null
+
+  const avail = artwork
+    ? (AVAILABILITY_LABELS[artwork.availability] ?? AVAILABILITY_LABELS.nfs)
+    : null
+
+  const allImages = artwork
+    ? [
+        ...(artwork.primary_image?.cf_id ? [{
+          cf_id: artwork.primary_image.cf_id,
+          alt_text: artwork.name,
+        }] : []),
+        ...(artwork.images ?? []).filter(
+          img => img.cf_id !== artwork.primary_image?.cf_id
+        ),
+      ]
+    : []
+
+  const activeImage = allImages[activeImageIdx]
+  const canBuy = artwork?.availability === 'available'
+  const hasPrints = (artwork?.prints?.length ?? 0) > 0
+
+  return (
+    <div
+      ref={backdropRef}
+      className={`${styles.backdrop} ${isOpen ? styles.backdropOpen : ''}`}
+      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-label={artwork ? `Detalle: ${artwork.name}` : 'Cargando obra'}
+    >
+      <div className={styles.modal}>
+        {/* ── Botón cerrar ─────────────────────────────────────── */}
+        <button
+          ref={closeButtonRef}
+          className={styles.closeBtn}
+          onClick={onClose}
+          aria-label="Cerrar"
+        >
+          <CloseIcon />
+        </button>
+
+        {/* ── Navegación entre obras ────────────────────────── */}
+        <div className={styles.navBtns}>
+          <button
+            className={styles.navBtn}
+            onClick={() => onNavigate(-1)}
+            aria-label="Obra anterior"
+            disabled={totalArtworks <= 1}
+          >
+            <ArrowLeftIcon />
+          </button>
+          <span className={styles.navCount}>
+            {currentIndex + 1} / {totalArtworks}
+          </span>
+          <button
+            className={styles.navBtn}
+            onClick={() => onNavigate(1)}
+            aria-label="Obra siguiente"
+            disabled={totalArtworks <= 1}
+          >
+            <ArrowRightIcon />
+          </button>
+        </div>
+
+        {/* ── Panel izquierdo: imagen ───────────────────────── */}
+        <div className={styles.imagePanel}>
+          {isLoading && (
+            <div className={styles.imageSkeleton} />
+          )}
+
+          {!isLoading && activeImage && (
+            <div className={styles.imageContainer}>
+              <img
+                key={activeImage.cf_id}
+                src={cfImageUrl(activeImage.cf_id, 'large')}
+                alt={activeImage.alt_text || artwork?.name || ''}
+                className={styles.mainImage}
+                loading="eager"
+                decoding="async"
+              />
+            </div>
+          )}
+
+          {/* Thumbnails de imágenes adicionales */}
+          {!isLoading && allImages.length > 1 && (
+            <div className={styles.thumbRow}>
+              {allImages.map((img, i) => (
+                <button
+                  key={img.cf_id}
+                  className={`${styles.thumb} ${i === activeImageIdx ? styles.thumbActive : ''}`}
+                  onClick={() => setActiveImageIdx(i)}
+                  aria-label={`Imagen ${i + 1}`}
+                  aria-pressed={i === activeImageIdx}
+                >
+                  <img
+                    src={cfImageUrl(img.cf_id, 'thumb')}
+                    alt=""
+                    className={styles.thumbImg}
+                    loading="lazy"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Panel derecho: info + acciones ───────────────── */}
+        <div className={styles.infoPanel}>
+          {isLoading ? (
+            <LoadingSkeleton />
+          ) : error ? (
+            <ErrorState message={error} />
+          ) : artwork ? (
+            <>
+              {/* Técnica */}
+              <p className={styles.techniqueTag}>
+                {artwork.technique.name}
+                {artwork.medium && (
+                  <span className={styles.mediumTag}> · {artwork.medium}</span>
+                )}
+              </p>
+
+              {/* Título */}
+              <h2 className={styles.title}>{artwork.name}</h2>
+
+              {/* Metadatos */}
+              <div className={styles.metaRow}>
+                <span className={styles.year}>{artwork.year}</span>
+                {artwork.dimensions.label && (
+                  <>
+                    <span className={styles.metaSep}>·</span>
+                    <span className={styles.dims}>{artwork.dimensions.label}</span>
+                  </>
+                )}
+                {artwork.edition && (
+                  <>
+                    <span className={styles.metaSep}>·</span>
+                    <span className={styles.edition}>Ed. {artwork.edition}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Colección */}
+              <p className={styles.collection}>
+                Colección: <strong>{artwork.collection.name}</strong>
+              </p>
+
+              <div className={styles.divider} />
+
+              {/* Descripción */}
+              {artwork.description && (
+                <p className={styles.description}>{artwork.description}</p>
+              )}
+
+              <div className={styles.spacer} />
+
+              {/* Precio y disponibilidad */}
+              {artwork.availability !== 'nfs' && (
+                <div className={styles.priceRow}>
+                  <div>
+                    <p className={styles.priceLabel}>precio</p>
+                    <p className={styles.price}>
+                      {artwork.currency === 'MXN' ? '$' : 'USD '}
+                      {artwork.price.toLocaleString('es-MX', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                      {artwork.currency === 'MXN' && (
+                        <span className={styles.priceCurrency}> MXN</span>
+                      )}
+                    </p>
+                  </div>
+                  {avail && (
+                    <div className={styles.availBadge}>
+                      <span
+                        className={styles.availDot}
+                        style={{ background: avail.color }}
+                      />
+                      <span className={styles.availLabel}>{avail.label}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── CTAs ─────────────────────────────────────── */}
+              <div className={styles.ctas}>
+                {canBuy && (
+                  <button className={styles.btnPrimary} onClick={() => {
+                    // Integrar con Odoo e-commerce / carrito
+                    if (artwork.product_tmpl_id) {
+                      window.location.href = `/shop/product/${artwork.product_tmpl_id}`
+                    } else {
+                      window.location.href = `/encargos?ref=${artwork.slug}`
+                    }
+                  }}>
+                    Adquirir obra
+                  </button>
+                )}
+
+                {hasPrints && (
+                  <button
+                    className={`${styles.btnSecondary} ${showPrints ? styles.btnActive : ''}`}
+                    onClick={() => setShowPrints(p => !p)}
+                  >
+                    {showPrints ? 'Ocultar prints' : `Prints disponibles (${artwork.prints.length})`}
+                  </button>
+                )}
+
+                <button
+                  className={styles.btnGhost}
+                  onClick={() => window.location.href = `/encargos?ref=${artwork.slug}`}
+                >
+                  Consultar al artista
+                </button>
+              </div>
+
+              {/* ── Panel de prints ───────────────────────── */}
+              {showPrints && hasPrints && (
+                <div className={styles.printsPanel}>
+                  <p className={styles.printsTitle}>Reproducciones disponibles</p>
+                  {artwork.prints.map(print => (
+                    <PrintRow key={print.id} print={print} />
+                  ))}
+                </div>
+              )}
+
+              {/* Share link */}
+              <button
+                className={styles.shareBtn}
+                onClick={() => {
+                  const url = `${window.location.origin}/galeria?obra=${artwork.slug}`
+                  navigator.clipboard?.writeText(url)
+                    .then(() => alert('Enlace copiado'))
+                    .catch(() => {})
+                }}
+              >
+                <ShareIcon />
+                Copiar enlace de la obra
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Sub-componentes ────────────────────────────────────────────────────────────
+
+function PrintRow({ print }: { print: PrintProduct }) {
+  return (
+    <div className={styles.printRow}>
+      <div>
+        <p className={styles.printSize}>{print.size_label}</p>
+        <p className={styles.printPaper}>{print.paper_label}</p>
+      </div>
+      <div className={styles.printRight}>
+        <p className={styles.printPrice}>
+          {print.currency} {print.price.toLocaleString('es-MX', {
+            minimumFractionDigits: 0
+          })}
+        </p>
+        <button
+          className={styles.btnPrintBuy}
+          disabled={!print.in_stock}
+        >
+          {print.in_stock ? 'Añadir' : 'Agotado'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className={styles.loadingSkeleton}>
+      <div className={styles.skLine} style={{ width: '35%', height: 10 }} />
+      <div className={styles.skLine} style={{ width: '70%', height: 28, marginTop: 10 }} />
+      <div className={styles.skLine} style={{ width: '50%', height: 10, marginTop: 8 }} />
+      <div className={styles.skDivider} />
+      <div className={styles.skLine} style={{ width: '100%', height: 10, marginTop: 16 }} />
+      <div className={styles.skLine} style={{ width: '90%', height: 10, marginTop: 6 }} />
+      <div className={styles.skLine} style={{ width: '80%', height: 10, marginTop: 6 }} />
+    </div>
+  )
+}
+
+function ErrorState({ message }: { message: string }) {
+  return (
+    <div className={styles.errorState}>
+      <p className={styles.errorText}>{message}</p>
+    </div>
+  )
+}
+
+// ── SVG Icons inline ──────────────────────────────────────────────────────────
+function CloseIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M2 2L14 14M14 2L2 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function ArrowLeftIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M5 2L10 7L5 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function ShareIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+      <path d="M10 1L12 3L10 5M12 3H5.5C3.567 3 2 4.567 2 6.5V12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+EOF
+ok "components/modal/ArtworkModal.tsx"
+
+log "nextjs/components/modal/ArtworkModal.module.css..."
+mkdir -p nextjs/components/modal
+cat > nextjs/components/modal/ArtworkModal.module.css << 'EOF'
+/* components/modal/ArtworkModal.module.css */
+
+/* ── Backdrop ────────────────────────────────────────────────────────── */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(2px);
+}
+
+.backdropOpen {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Modal container ─────────────────────────────────────────────────── */
+.modal {
+  position: relative;
+  background: #111111;
+  border: 1px solid #2c2c2c;
+  width: 100%;
+  max-width: 960px;
+  max-height: 90vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+  animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@media (max-width: 720px) {
+  .modal {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+}
+
+/* ── Botón cerrar ────────────────────────────────────────────────────── */
+.closeBtn {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(17, 17, 17, 0.8);
+  border: 1px solid #2c2c2c;
+  color: #6a6560;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.closeBtn:hover { color: #f4efe9; border-color: #6a6560; }
+
+/* ── Navegación ←→ ──────────────────────────────────────────────────── */
+.navBtns {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.navBtn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #181818;
+  border: 1px solid #2c2c2c;
+  color: #6a6560;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.navBtn:hover:not(:disabled) {
+  color: #c41e1e;
+  border-color: #8b1a1a;
+}
+
+.navBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.navCount {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #3f3d3a;
+  font-family: 'Archivo', sans-serif;
+  min-width: 36px;
+  text-align: center;
+}
+
+/* ── Panel imagen ────────────────────────────────────────────────────── */
+.imagePanel {
+  background: #0d0d0d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 24px 24px;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.imageSkeleton {
+  width: 100%;
+  height: 360px;
+  background: #1a1a1a;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.7; }
+}
+
+.imageContainer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 100%;
+}
+
+.mainImage {
+  max-width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  display: block;
+  animation: imgReveal 0.4s ease both;
+}
+
+@keyframes imgReveal {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Thumbnails ──────────────────────────────────────────────────────── */
+.thumbRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.thumb {
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  background: #1a1a1a;
+  border: 1px solid #2c2c2c;
+  transition: border-color 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.thumb:hover { border-color: #6a6560; }
+
+.thumbActive {
+  border-color: #c41e1e !important;
+}
+
+.thumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Panel info ──────────────────────────────────────────────────────── */
+.infoPanel {
+  padding: 32px 28px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: #2c2c2c transparent;
+}
+
+.techniqueTag {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #c41e1e;
+  margin: 0 0 8px;
+  font-family: 'Archivo', sans-serif;
+}
+
+.mediumTag {
+  color: #6a6560;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 10px;
+}
+
+.title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 30px;
+  font-weight: 300;
+  font-style: italic;
+  color: #f4efe9;
+  line-height: 1.15;
+  margin: 0 0 8px;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.year, .dims, .edition {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: #6a6560;
+  font-family: 'Archivo', sans-serif;
+}
+
+.metaSep {
+  color: #3f3d3a;
+  font-size: 11px;
+}
+
+.collection {
+  font-size: 11px;
+  color: #3f3d3a;
+  margin: 0;
+  font-family: 'Archivo', sans-serif;
+}
+
+.collection strong {
+  color: #6a6560;
+  font-weight: 400;
+}
+
+.divider {
+  height: 1px;
+  background: #2c2c2c;
+  margin: 16px 0;
+}
+
+.description {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #c6bdb3;
+  margin: 0;
+}
+
+.spacer { flex: 1; min-height: 20px; }
+
+/* ── Precio y disponibilidad ─────────────────────────────────────────── */
+.priceRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.priceLabel {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #3f3d3a;
+  margin: 0 0 4px;
+  font-family: 'Archivo', sans-serif;
+}
+
+.price {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: #f4efe9;
+  line-height: 1;
+  margin: 0;
+}
+
+.priceCurrency {
+  font-size: 13px;
+  color: #6a6560;
+}
+
+.availBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.availDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.availLabel {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #6a6560;
+  font-family: 'Archivo', sans-serif;
+}
+
+/* ── CTAs ────────────────────────────────────────────────────────────── */
+.ctas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.btnPrimary {
+  width: 100%;
+  padding: 14px;
+  background: #c41e1e;
+  color: #f4efe9;
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border: none;
+  transition: background 0.2s;
+}
+
+.btnPrimary:hover { background: #e02424; }
+
+.btnSecondary {
+  width: 100%;
+  padding: 13px;
+  background: transparent;
+  color: #c6bdb3;
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border: 1px solid #2c2c2c;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.btnSecondary:hover,
+.btnActive {
+  border-color: #c41e1e;
+  color: #c41e1e;
+}
+
+.btnGhost {
+  width: 100%;
+  padding: 11px;
+  background: transparent;
+  color: #6a6560;
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border: 1px solid #2c2c2c;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.btnGhost:hover {
+  color: #c6bdb3;
+  border-color: #6a6560;
+}
+
+/* ── Panel prints ────────────────────────────────────────────────────── */
+.printsPanel {
+  border: 1px solid #2c2c2c;
+  padding: 14px;
+  margin-bottom: 12px;
+  animation: fadeIn 0.25s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.printsTitle {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6a6560;
+  margin: 0 0 10px;
+  font-family: 'Archivo', sans-serif;
+}
+
+.printRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.printRow:last-child { border-bottom: none; }
+
+.printSize {
+  font-size: 12px;
+  color: #c6bdb3;
+  margin: 0 0 2px;
+  font-family: 'Archivo', sans-serif;
+}
+
+.printPaper {
+  font-size: 10px;
+  color: #6a6560;
+  margin: 0;
+  font-family: 'Archivo', sans-serif;
+}
+
+.printRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.printPrice {
+  font-size: 13px;
+  color: #f4efe9;
+  margin: 0;
+  font-family: 'Cormorant Garamond', serif;
+  white-space: nowrap;
+}
+
+.btnPrintBuy {
+  font-family: 'Archivo', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border: 1px solid #2c2c2c;
+  color: #c6bdb3;
+  background: transparent;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.btnPrintBuy:hover:not(:disabled) {
+  border-color: #c41e1e;
+  color: #c41e1e;
+}
+
+.btnPrintBuy:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── Share ───────────────────────────────────────────────────────────── */
+.shareBtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Archivo', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #3f3d3a;
+  padding: 0;
+  margin-top: 4px;
+  transition: color 0.2s;
+  background: transparent;
+  border: none;
+}
+
+.shareBtn:hover { color: #6a6560; }
+
+/* ── Estados de carga / error ────────────────────────────────────────── */
+.loadingSkeleton { padding: 0; }
+
+.skLine {
+  background: #1a1a1a;
+  animation: shimmer 1.6s ease-in-out infinite;
+  margin-bottom: 8px;
+}
+
+.skDivider {
+  height: 1px;
+  background: #1a1a1a;
+  margin: 20px 0;
+}
+
+.errorState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.errorText {
+  font-size: 13px;
+  color: #6a6560;
+  text-align: center;
+}
+
+EOF
+ok "components/modal/ArtworkModal.module.css"
+
+log "nextjs/components/commission/CommissionForm.tsx..."
+mkdir -p nextjs/components/commission
+cat > nextjs/components/commission/CommissionForm.tsx << 'EOF'
+/**
+ * components/commission/CommissionForm.tsx
+ *
+ * Formulario de encargo personalizado.
+ * Conecta con /api/commission (proxy → Odoo).
+ * Incluye:
+ *  - Honeypot anti-spam (campo oculto "website")
+ *  - Validación en cliente antes de enviar
+ *  - Estado de carga, éxito y error
+ *  - Selector de técnica cargado desde Odoo
+ *  - Campo de obra de referencia (opcional, desde URL ?ref=)
+ */
+
+'use client'
+
+import { useState, useRef } from 'react'
+import styles from './CommissionForm.module.css'
+import type { Technique, BudgetRange } from '@/lib/types'
+
+interface CommissionFormProps {
+  techniques: Technique[]
+  refArtworkSlug?: string   // pre-rellenado desde ?ref= en la URL
+  refArtworkId?: number
+  refArtworkName?: string
+}
+
+interface FormState {
+  partner_name: string
+  email: string
+  phone: string
+  description: string
+  budget_range: BudgetRange | ''
+  technique_id: string
+  // Honeypot — debe permanecer vacío
+  website: string
+}
+
+const BUDGET_OPTIONS: { value: BudgetRange; label: string }[] = [
+  { value: 'lt500',    label: 'Menos de $500' },
+  { value: '500_1500', label: '$500 – $1,500' },
+  { value: '1500_5k',  label: '$1,500 – $5,000' },
+  { value: '5k_15k',   label: '$5,000 – $15,000' },
+  { value: 'gt15k',    label: 'Más de $15,000' },
+]
+
+type SubmitStatus = 'idle' | 'submitting' | 'success' | 'error'
+
+export default function CommissionForm({
+  techniques,
+  refArtworkId,
+  refArtworkName,
+}: CommissionFormProps) {
+  const [form, setForm] = useState<FormState>({
+    partner_name: '',
+    email: '',
+    phone: '',
+    description: '',
+    budget_range: '',
+    technique_id: '',
+    website: '',  // honeypot
+  })
+
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+  const [status, setStatus] = useState<SubmitStatus>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
+  const formRef = useRef<HTMLFormElement>(null)
+
+  const set = (field: keyof FormState) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    setForm(prev => ({ ...prev, [field]: e.target.value }))
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }))
+  }
+
+  const validate = (): boolean => {
+    const newErrors: Partial<Record<keyof FormState, string>> = {}
+
+    if (!form.partner_name.trim())
+      newErrors.partner_name = 'El nombre es requerido.'
+    if (!form.email.trim())
+      newErrors.email = 'El email es requerido.'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      newErrors.email = 'El email no tiene un formato válido.'
+    if (!form.description.trim())
+      newErrors.description = 'Por favor describe tu encargo.'
+    else if (form.description.trim().length < 30)
+      newErrors.description = 'Por favor añade más detalles (al menos 30 caracteres).'
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!validate()) return
+
+    setStatus('submitting')
+    setErrorMessage('')
+
+    try {
+      const payload: Record<string, unknown> = {
+        partner_name: form.partner_name.trim(),
+        email:        form.email.trim().toLowerCase(),
+        description:  form.description.trim(),
+        website:      form.website,  // honeypot
+      }
+
+      if (form.phone.trim())       payload.phone        = form.phone.trim()
+      if (form.budget_range)       payload.budget_range = form.budget_range
+      if (form.technique_id)       payload.technique_id = parseInt(form.technique_id)
+      if (refArtworkId)            payload.ref_artwork_id = refArtworkId
+
+      const res = await fetch('/api/commission', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        if (data.errors) {
+          setErrors(data.errors)
+          setStatus('idle')
+          return
+        }
+        throw new Error(data.error ?? 'Error desconocido')
+      }
+
+      setStatus('success')
+      formRef.current?.reset()
+      setForm({
+        partner_name: '', email: '', phone: '',
+        description: '', budget_range: '', technique_id: '', website: '',
+      })
+    } catch (err) {
+      setStatus('error')
+      setErrorMessage(
+        (err as Error).message ||
+        'No pudimos procesar tu solicitud. Por favor intenta de nuevo.'
+      )
+    }
+  }
+
+  if (status === 'success') {
+    return (
+      <div className={styles.successState}>
+        <div className={styles.successIcon} aria-hidden="true">✓</div>
+        <h3 className={styles.successTitle}>Solicitud recibida</h3>
+        <p className={styles.successText}>
+          Gracias por tu interés. Nos pondremos en contacto contigo en breve
+          para hablar sobre tu encargo.
+        </p>
+        <button
+          className={styles.btnReset}
+          onClick={() => setStatus('idle')}
+        >
+          Enviar otra solicitud
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className={styles.form}
+      noValidate
+    >
+      {/* Referencia de obra */}
+      {refArtworkName && (
+        <div className={styles.refBanner}>
+          <span className={styles.refLabel}>Obra de referencia</span>
+          <span className={styles.refName}>{refArtworkName}</span>
+        </div>
+      )}
+
+      {/* Honeypot — invisible para humanos */}
+      <div style={{ position: 'absolute', left: '-9999px', opacity: 0 }} aria-hidden="true">
+        <label htmlFor="website">No llenar</label>
+        <input
+          id="website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={form.website}
+          onChange={set('website')}
+        />
+      </div>
+
+      {/* ── Campos ───────────────────────────────────────────── */}
+      <div className={styles.row}>
+        <Field
+          label="Nombre *"
+          error={errors.partner_name}
+        >
+          <input
+            type="text"
+            className={`${styles.input} ${errors.partner_name ? styles.inputError : ''}`}
+            placeholder="Tu nombre completo"
+            value={form.partner_name}
+            onChange={set('partner_name')}
+            autoComplete="name"
+            required
+          />
+        </Field>
+      </div>
+
+      <div className={styles.rowTwo}>
+        <Field label="Email *" error={errors.email}>
+          <input
+            type="email"
+            className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
+            placeholder="correo@ejemplo.com"
+            value={form.email}
+            onChange={set('email')}
+            autoComplete="email"
+            required
+          />
+        </Field>
+        <Field label="Teléfono">
+          <input
+            type="tel"
+            className={styles.input}
+            placeholder="+52 (opcional)"
+            value={form.phone}
+            onChange={set('phone')}
+            autoComplete="tel"
+          />
+        </Field>
+      </div>
+
+      <div className={styles.rowTwo}>
+        <Field label="Técnica preferida">
+          <select
+            className={styles.select}
+            value={form.technique_id}
+            onChange={set('technique_id')}
+          >
+            <option value="">Sin preferencia</option>
+            {techniques.map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Presupuesto estimado">
+          <select
+            className={styles.select}
+            value={form.budget_range}
+            onChange={set('budget_range')}
+          >
+            <option value="">Seleccionar...</option>
+            {BUDGET_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </Field>
+      </div>
+
+      <Field label="Descripción del encargo *" error={errors.description}>
+        <textarea
+          className={`${styles.textarea} ${errors.description ? styles.inputError : ''}`}
+          placeholder="Describe lo que tienes en mente: tamaño aproximado, temática, colores, espacio donde irá, uso previsto..."
+          rows={5}
+          value={form.description}
+          onChange={set('description')}
+          required
+        />
+        <span className={styles.charCount}>
+          {form.description.length} caracteres
+        </span>
+      </Field>
+
+      {/* Error global */}
+      {status === 'error' && (
+        <div className={styles.errorBanner} role="alert">
+          {errorMessage}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        className={styles.btnSubmit}
+        disabled={status === 'submitting'}
+      >
+        {status === 'submitting' ? (
+          <>
+            <span className={styles.spinner} aria-hidden="true" />
+            Enviando...
+          </>
+        ) : (
+          'Enviar solicitud'
+        )}
+      </button>
+
+      <p className={styles.privacyNote}>
+        Tu información es privada y no será compartida con terceros.
+        Solo se usará para responder a tu solicitud.
+      </p>
+    </form>
+  )
+}
+
+// ── Sub-componente Field ───────────────────────────────────────────────────────
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string
+  error?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className={styles.field}>
+      <label className={styles.label}>{label}</label>
+      {children}
+      {error && (
+        <span className={styles.fieldError} role="alert">{error}</span>
+      )}
+    </div>
+  )
+}
+
+EOF
+ok "components/commission/CommissionForm.tsx"
+
+log "nextjs/components/commission/CommissionForm.module.css..."
+mkdir -p nextjs/components/commission
+cat > nextjs/components/commission/CommissionForm.module.css << 'EOF'
+/* components/commission/CommissionForm.module.css */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 640px;
+}
+
+/* ── Obra de referencia ──────────────────────────────────────────────── */
+.refBanner {
+  padding: 12px 16px;
+  background: rgba(196, 30, 30, 0.07);
+  border: 1px solid rgba(196, 30, 30, 0.25);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.refLabel {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #c41e1e;
+  font-family: 'Archivo', sans-serif;
+  white-space: nowrap;
+}
+
+.refName {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 16px;
+  color: #c6bdb3;
+}
+
+/* ── Layout de campos ────────────────────────────────────────────────── */
+.row    { display: grid; grid-template-columns: 1fr; }
+.rowTwo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+@media (max-width: 480px) {
+  .rowTwo { grid-template-columns: 1fr; }
+}
+
+/* ── Campo individual ────────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6a6560;
+  font-family: 'Archivo', sans-serif;
+}
+
+/* ── Inputs base ─────────────────────────────────────────────────────── */
+.input,
+.select,
+.textarea {
+  width: 100%;
+  background: #161616;
+  border: 1px solid #2c2c2c;
+  color: #f4efe9;
+  font-family: 'Archivo', sans-serif;
+  font-size: 13px;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #3f3d3a;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: #c41e1e;
+}
+
+.input:hover:not(:focus),
+.select:hover:not(:focus),
+.textarea:hover:not(:focus) {
+  border-color: #3f3d3a;
+}
+
+.inputError {
+  border-color: #8b1a1a !important;
+}
+
+/* Select arrow */
+.select {
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236a6560' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+
+.select option {
+  background: #161616;
+  color: #f4efe9;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+.charCount {
+  font-size: 10px;
+  color: #3f3d3a;
+  font-family: 'Archivo', sans-serif;
+  align-self: flex-end;
+}
+
+/* ── Errores de campo ────────────────────────────────────────────────── */
+.fieldError {
+  font-size: 11px;
+  color: #ef4444;
+  font-family: 'Archivo', sans-serif;
+}
+
+/* ── Error global ────────────────────────────────────────────────────── */
+.errorBanner {
+  padding: 12px 14px;
+  background: rgba(139, 26, 26, 0.15);
+  border: 1px solid #8b1a1a;
+  font-size: 13px;
+  color: #f4efe9;
+  font-family: 'Archivo', sans-serif;
+}
+
+/* ── Botón de envío ──────────────────────────────────────────────────── */
+.btnSubmit {
+  padding: 16px;
+  background: #c41e1e;
+  color: #f4efe9;
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btnSubmit:hover:not(:disabled) { background: #e02424; }
+.btnSubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid rgba(244, 239, 233, 0.3);
+  border-top-color: #f4efe9;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Nota de privacidad ──────────────────────────────────────────────── */
+.privacyNote {
+  font-size: 11px;
+  color: #3f3d3a;
+  line-height: 1.5;
+  font-family: 'Archivo', sans-serif;
+  margin: -4px 0 0;
+}
+
+/* ── Estado de éxito ─────────────────────────────────────────────────── */
+.successState {
+  text-align: center;
+  padding: 48px 24px;
+  animation: fadeIn 0.4s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.successIcon {
+  font-size: 32px;
+  color: #22c55e;
+  margin-bottom: 16px;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.successTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 300;
+  font-style: italic;
+  color: #f4efe9;
+  margin-bottom: 12px;
+}
+
+.successText {
+  font-size: 14px;
+  color: #c6bdb3;
+  line-height: 1.7;
+  max-width: 400px;
+  margin: 0 auto 24px;
+}
+
+.btnReset {
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #6a6560;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.btnReset:hover { color: #c6bdb3; }
+
+EOF
+ok "components/commission/CommissionForm.module.css"
+
+log "nextjs/pages/galeria/index.tsx..."
+mkdir -p nextjs/pages/galeria
+cat > nextjs/pages/galeria/index.tsx << 'EOF'
+/**
+ * pages/galeria/index.tsx
+ *
+ * Página principal de la galería de Casa Janus.
+ * Renderizada con ISR (Incremental Static Regeneration):
+ *  - getStaticProps genera el HTML estático con las primeras 24 obras
+ *  - Se regenera cada 10 minutos si hay cambios en Odoo
+ *  - El cliente carga obras adicionales vía IntersectionObserver
+ *
+ * URL patterns:
+ *  /galeria                          → todas las obras
+ *  /galeria?tecnica=oleo             → filtrado por técnica
+ *  /galeria?tecnica=oleo&col=sombras → filtrado por colección
+ *  /galeria?obra=vigilia-en-calma    → modal abierto (shallow)
+ */
+
+import { useState, useCallback, useEffect } from 'react'
+import type { GetStaticProps, NextPage } from 'next'
+import Head from 'next/head'
+import { useRouter } from 'next/router'
+
+import GalleryMural from '@/components/gallery/GalleryMural'
+import ArtworkModal from '@/components/modal/ArtworkModal'
+import { useArtworkModal } from '@/hooks/useArtworkModal'
+import { getTechniques, getArtworks } from '@/lib/odoo-client'
+import type { Technique, Collection, ListResponse, Artwork } from '@/lib/types'
+import styles from './Galeria.module.css'
+
+interface GaleriaPageProps {
+  techniques:     Technique[]
+  initialArtworks: ListResponse<Artwork>
+}
+
+const GaleriaPage: NextPage<GaleriaPageProps> = ({
+  techniques,
+  initialArtworks,
+}) => {
+  const router = useRouter()
+
+  // Leer filtros desde la query
+  const activeTechSlug = (router.query.tecnica as string) || ''
+  const activeColSlug  = (router.query.col as string) || ''
+
+  // Técnica activa
+  const activeTechnique = techniques.find(t => t.slug === activeTechSlug) ?? null
+  const collections: Collection[] = activeTechnique?.collections ?? []
+
+  // Estado de artworks para la página actual (se actualiza al cambiar filtros)
+  const [currentArtworks, setCurrentArtworks] = useState(initialArtworks)
+  const [isFiltering, setIsFiltering] = useState(false)
+
+  // ── Modal ────────────────────────────────────────────────────────────────
+  const {
+    isOpen, isLoading, artwork, error,
+    openModal, closeModal, navigateModal, currentIndex,
+  } = useArtworkModal(currentArtworks.data)
+
+  // ── Cambio de filtros: recarga obras del servidor ────────────────────────
+  useEffect(() => {
+    if (!router.isReady) return
+
+    const fetchFiltered = async () => {
+      setIsFiltering(true)
+      try {
+        const params = new URLSearchParams({ page: '1', per_page: '24' })
+        if (activeTechSlug) params.set('technique', activeTechSlug)
+        if (activeColSlug)  params.set('collection', activeColSlug)
+
+        const res = await fetch(`/api/gallery?${params}`)
+        const data = await res.json()
+        setCurrentArtworks(data.artworks)
+      } catch (e) {
+        console.error('[galeria] filter fetch error', e)
+      } finally {
+        setIsFiltering(false)
+      }
+    }
+
+    // Solo hace fetch si hay filtros distintos a los iniciales
+    if (activeTechSlug || activeColSlug) {
+      fetchFiltered()
+    } else {
+      setCurrentArtworks(initialArtworks)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTechSlug, activeColSlug, router.isReady])
+
+  // ── Navegar a técnica ────────────────────────────────────────────────────
+  const selectTechnique = useCallback((slug: string) => {
+    const query: Record<string, string> = {}
+    if (slug) query.tecnica = slug
+    router.push({ pathname: '/galeria', query }, undefined, { shallow: true, scroll: false })
+  }, [router])
+
+  // ── Navegar a colección ──────────────────────────────────────────────────
+  const selectCollection = useCallback((slug: string) => {
+    const query: Record<string, string> = {}
+    if (activeTechSlug) query.tecnica = activeTechSlug
+    if (slug) query.col = slug
+    router.push({ pathname: '/galeria', query }, undefined, { shallow: true, scroll: false })
+  }, [router, activeTechSlug])
+
+  // ── SEO ──────────────────────────────────────────────────────────────────
+  const pageTitle = activeTechnique
+    ? `${activeTechnique.name} — Galería | Casa Janus`
+    : 'Galería | Casa Janus'
+  const pageDesc = activeTechnique
+    ? `Obras de ${activeTechnique.name} de Casa Janus. ${activeTechnique.description || ''}`
+    : 'Galería de arte de Casa Janus. Explora obras por técnica y colección.'
+
+  return (
+    <>
+      <Head>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDesc} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDesc} />
+        <meta property="og:type" content="website" />
+      </Head>
+
+      <div className={styles.page}>
+        {/* ── Hero strip ──────────────────────────────────────── */}
+        <header className={styles.hero}>
+          <p className={styles.heroLabel}>
+            {activeTechnique ? activeTechnique.name.toUpperCase() : 'COLECCIÓN'}
+          </p>
+          <h1 className={styles.heroTitle}>
+            {activeTechnique
+              ? activeTechnique.name
+              : 'Casa Janus'}
+          </h1>
+        </header>
+
+        {/* ── Tabs de técnica ────────────────────────────────── */}
+        <nav className={styles.techniqueTabs} aria-label="Técnicas">
+          <button
+            className={`${styles.tab} ${!activeTechSlug ? styles.tabActive : ''}`}
+            onClick={() => selectTechnique('')}
+          >
+            Todas
+          </button>
+          {techniques.map(t => (
+            <button
+              key={t.id}
+              className={`${styles.tab} ${activeTechSlug === t.slug ? styles.tabActive : ''}`}
+              onClick={() => selectTechnique(t.slug)}
+            >
+              {t.name}
+              <span className={styles.tabCount}>{t.artwork_count}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* ── Filtro de colección ─────────────────────────────── */}
+        {collections.length > 0 && (
+          <div className={styles.collectionBar} role="group" aria-label="Colecciones">
+            <span className={styles.collectionBarLabel}>Colección:</span>
+            <button
+              className={`${styles.pill} ${!activeColSlug ? styles.pillActive : ''}`}
+              onClick={() => selectCollection('')}
+            >
+              Todas
+            </button>
+            {collections.map((col: Collection) => (
+              <button
+                key={col.id}
+                className={`${styles.pill} ${activeColSlug === col.slug ? styles.pillActive : ''}`}
+                onClick={() => selectCollection(col.slug)}
+              >
+                {col.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── Mural ───────────────────────────────────────────── */}
+        <main>
+          {isFiltering ? (
+            <div className={styles.filteringOverlay}>
+              <span className={styles.filteringDot} />
+              <span className={styles.filteringDot} style={{ animationDelay: '0.15s' }} />
+              <span className={styles.filteringDot} style={{ animationDelay: '0.30s' }} />
+            </div>
+          ) : (
+            <GalleryMural
+              key={`${activeTechSlug}-${activeColSlug}`}
+              initialData={currentArtworks}
+              techniqueSlug={activeTechSlug}
+              collectionSlug={activeColSlug}
+              onArtworkClick={openModal}
+            />
+          )}
+        </main>
+      </div>
+
+      {/* ── Modal (fuera del layout) ─────────────────────────── */}
+      <ArtworkModal
+        isOpen={isOpen}
+        isLoading={isLoading}
+        artwork={artwork}
+        error={error}
+        currentIndex={currentIndex}
+        totalArtworks={currentArtworks.data.length}
+        onClose={closeModal}
+        onNavigate={navigateModal}
+      />
+    </>
+  )
+}
+
+export default GaleriaPage
+
+// ── ISR: genera el HTML estático, revalida cada 10 minutos ───────────────────
+export const getStaticProps: GetStaticProps<GaleriaPageProps> = async () => {
+  const [techniques, initialArtworks] = await Promise.all([
+    getTechniques(true),   // con colecciones anidadas para los filtros
+    getArtworks({ page: 1, perPage: 24, order: 'year_desc' }),
+  ])
+
+  return {
+    props: {
+      techniques,
+      initialArtworks,
+    },
+    revalidate: 600,   // ISR: 10 minutos
+  }
+}
+
+EOF
+ok "pages/galeria/index.tsx"
+
+log "nextjs/pages/galeria/Galeria.module.css..."
+mkdir -p nextjs/pages/galeria
+cat > nextjs/pages/galeria/Galeria.module.css << 'EOF'
+/* pages/galeria/Galeria.module.css */
+
+.page {
+  background: #090909;
+  min-height: 100vh;
+}
+
+/* ── Hero strip ─────────────────────────────────────────────────────── */
+.hero {
+  background: #111111;
+  border-bottom: 1px solid #2c2c2c;
+  padding: 28px 24px 22px;
+}
+
+.heroLabel {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: #c41e1e;
+  font-family: 'Archivo', sans-serif;
+  font-weight: 500;
+  margin: 0 0 6px;
+}
+
+.heroTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 38px;
+  font-weight: 300;
+  font-style: italic;
+  color: #f4efe9;
+  line-height: 1.05;
+  margin: 0;
+}
+
+/* ── Técnica tabs ────────────────────────────────────────────────────── */
+.techniqueTabs {
+  background: #111111;
+  border-bottom: 1px solid #2c2c2c;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 20px;
+}
+
+.techniqueTabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  padding: 14px 18px;
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6a6560;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tab:hover   { color: #c6bdb3; }
+
+.tabActive {
+  color: #c41e1e !important;
+  border-bottom-color: #c41e1e;
+}
+
+.tabCount {
+  font-size: 9px;
+  color: #3f3d3a;
+  letter-spacing: 0;
+}
+
+/* ── Collection pills ────────────────────────────────────────────────── */
+.collectionBar {
+  background: #090909;
+  border-bottom: 1px solid #2c2c2c;
+  padding: 14px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.collectionBarLabel {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #3f3d3a;
+  font-family: 'Archivo', sans-serif;
+  margin-right: 2px;
+}
+
+.pill {
+  padding: 5px 14px;
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #6a6560;
+  background: transparent;
+  border: 1px solid #2c2c2c;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.pill:hover {
+  border-color: #6a6560;
+  color: #c6bdb3;
+}
+
+.pillActive {
+  border-color: #c41e1e !important;
+  color: #c41e1e !important;
+  background: rgba(196, 30, 30, 0.07);
+}
+
+/* ── Indicador de filtrado ───────────────────────────────────────────── */
+.filteringOverlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 80px 24px;
+}
+
+.filteringDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3f3d3a;
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(1); }
+  40%           { opacity: 1;   transform: scale(1.2); }
+}
+
+EOF
+ok "pages/galeria/Galeria.module.css"
+
+log "nextjs/pages/api/gallery/index.ts..."
+mkdir -p nextjs/pages/api/gallery
+cat > nextjs/pages/api/gallery/index.ts << 'EOF'
+/**
+ * pages/api/gallery/index.ts
+ *
+ * Proxy de la API de Odoo hacia el cliente de Next.js.
+ * Sirve técnicas + colecciones en un solo request para
+ * la carga inicial del mural de la galería.
+ *
+ * GET /api/gallery
+ *   ?technique=<slug>
+ *   &collection=<slug>
+ *   &page=1
+ *   &per_page=24
+ *   &order=year_desc
+ *
+ * Este endpoint agrega datos de Odoo y los devuelve con
+ * headers de caché optimizados para Cloudflare:
+ *   - Cache-Control: public, s-maxage=300, stale-while-revalidate=3600
+ *
+ * El cliente Next.js llama a este endpoint (en lugar de Odoo directamente)
+ * para no exponer la URL de Odoo ni el Bearer token al navegador.
+ */
+
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { getTechniques, getArtworks } from '@/lib/odoo-client'
+import type { GalleryApiResponse } from '@/lib/types'
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  try {
+    const {
+      technique,
+      collection,
+      page = '1',
+      per_page = '24',
+      order = 'year_desc',
+    } = req.query
+
+    const [techniques, artworksResult] = await Promise.all([
+      getTechniques(true),
+      getArtworks({
+        techniqueSlug:  technique as string | undefined,
+        collectionSlug: collection as string | undefined,
+        page:    parseInt(page as string, 10),
+        perPage: parseInt(per_page as string, 10),
+        order:   order as 'year_desc' | 'year_asc' | 'name_asc' | 'sequence',
+      }),
+    ])
+
+    // Cloudflare CDN cache: 5 min, stale-while-revalidate 1h
+    res.setHeader(
+      'Cache-Control',
+      'public, s-maxage=300, stale-while-revalidate=3600',
+    )
+
+    return res.status(200).json({
+      techniques,
+      artworks: artworksResult,
+    })
+  } catch (err) {
+    console.error('[api/gallery]', err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+EOF
+ok "pages/api/gallery/index.ts"
+
+log "nextjs/pages/api/commission/index.ts..."
+mkdir -p nextjs/pages/api/commission
+cat > nextjs/pages/api/commission/index.ts << 'EOF'
+/**
+ * pages/api/commission/index.ts
+ *
+ * Proxy del formulario de encargos personalizados hacia Odoo.
+ * Implementa:
+ *  - Validación de campos requeridos
+ *  - Honeypot anti-spam (campo oculto "website")
+ *  - Rate limiting básico por IP (complementado con Cloudflare Rate Limiting)
+ *  - No expone la URL de Odoo al cliente
+ *
+ * POST /api/commission
+ * Body: CommissionPayload (JSON)
+ */
+
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { submitCommission } from '@/lib/odoo-client'
+import type { CommissionPayload } from '@/lib/types'
+
+// Rate limiting en memoria (para desarrollo).
+// En producción, usar Cloudflare Rate Limiting en el Worker o Upstash Redis.
+const RATE_LIMIT_WINDOW_MS = 60_000   // 1 min
+const RATE_LIMIT_MAX      = 3         // 3 envíos por IP por minuto
+
+const ipTimestamps: Map<string, number[]> = new Map()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const timestamps = (ipTimestamps.get(ip) ?? []).filter(
+    t => now - t < RATE_LIMIT_WINDOW_MS
+  )
+  if (timestamps.length >= RATE_LIMIT_MAX) return true
+  ipTimestamps.set(ip, [...timestamps, now])
+  return false
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  // CORS preflight
+  res.setHeader('Access-Control-Allow-Origin', process.env.NEXTAUTH_URL ?? '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  // Rate limiting
+  const ip = (req.headers['cf-connecting-ip'] as string)
+    ?? (req.headers['x-forwarded-for'] as string)?.split(',')[0]
+    ?? req.socket.remoteAddress
+    ?? 'unknown'
+
+  if (isRateLimited(ip)) {
+    return res.status(429).json({ error: 'Demasiadas solicitudes. Por favor espera un momento.' })
+  }
+
+  const body = req.body as CommissionPayload & { website?: string }
+
+  // Honeypot: el campo "website" debe estar vacío (bots lo rellenan)
+  if (body.website) {
+    // Silently reject spam, return 200 to confuse bots
+    return res.status(200).json({ success: true, message: 'Solicitud recibida.' })
+  }
+
+  // Validación básica
+  const errors: Record<string, string> = {}
+  if (!body.partner_name?.trim()) errors.partner_name = 'El nombre es requerido.'
+  if (!body.email?.trim())        errors.email = 'El email es requerido.'
+  if (!body.description?.trim())  errors.description = 'La descripción es requerida.'
+
+  // Validación de email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (body.email && !emailRegex.test(body.email)) {
+    errors.email = 'El email no tiene un formato válido.'
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return res.status(422).json({ errors })
+  }
+
+  try {
+    const result = await submitCommission({
+      partner_name:    body.partner_name.trim(),
+      email:           body.email.trim().toLowerCase(),
+      phone:           body.phone?.trim(),
+      description:     body.description.trim(),
+      budget_range:    body.budget_range,
+      technique_id:    body.technique_id,
+      ref_artwork_id:  body.ref_artwork_id,
+    })
+
+    return res.status(201).json(result)
+  } catch (err) {
+    console.error('[api/commission]', err)
+    return res.status(500).json({
+      error: 'No pudimos procesar tu solicitud. Por favor intenta de nuevo o contáctanos directamente.',
+    })
+  }
+}
+
+EOF
+ok "pages/api/commission/index.ts"
+
+log "nextjs/pages/api/artwork/[slug].ts..."
+mkdir -p nextjs/pages/api/artwork
+cat > 'nextjs/pages/api/artwork/[slug].ts' << 'EOF'
+/**
+ * pages/api/artwork/[slug].ts
+ *
+ * Detalle de una obra por slug.
+ * El modal del mural llama a este endpoint con fetch en el cliente
+ * para cargar el detalle SIN cambiar de página (shallow routing).
+ *
+ * GET /api/artwork/vigilia-en-calma-2022
+ *
+ * La URL del navegador se actualiza con:
+ *   router.push(`/galeria?obra=${slug}`, undefined, { shallow: true })
+ * para que la obra sea compartible y el botón "atrás" cierre el modal.
+ *
+ * Cache: 10 min en Cloudflare (obras pueden actualizarse con más frecuencia)
+ */
+
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { getArtwork } from '@/lib/odoo-client'
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const { slug } = req.query
+
+  if (!slug || typeof slug !== 'string') {
+    return res.status(400).json({ error: 'Missing slug' })
+  }
+
+  try {
+    const artwork = await getArtwork(slug)
+
+    if (!artwork) {
+      return res.status(404).json({ error: 'Artwork not found' })
+    }
+
+    res.setHeader(
+      'Cache-Control',
+      'public, s-maxage=600, stale-while-revalidate=3600',
+    )
+
+    return res.status(200).json({ data: artwork })
+  } catch (err) {
+    console.error(`[api/artwork/${slug}]`, err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+EOF
+ok "pages/api/artwork/[slug].ts"
+
+echo ""
+echo -e "\033[0;32m═══════════════════════════════════════\033[0m"
+echo -e "\033[0;32m ✅ Instalación completa\033[0m"
+echo -e "\033[0;32m═══════════════════════════════════════\033[0m"
+echo ""
+echo "Archivos instalados:"
+find nextjs/lib nextjs/hooks nextjs/styles nextjs/components nextjs/pages -type f 2>/dev/null | sort
+echo ""
+echo "Siguiente paso:"
+echo "  cd nextjs && npm install && cd .."
+echo "  make dev"

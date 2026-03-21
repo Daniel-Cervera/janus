@@ -1,0 +1,59 @@
+# docker-compose.prod.yml
+# Override de producción. Usar junto al base:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Diferencias con desarrollo:
+#  - Next.js compilado (target: production, sin hot-reload)
+#  - Postgres sin puerto expuesto al host
+#  - Redis con contraseña
+#  - Odoo sin modo debug
+#  - Restart siempre en producción
+#  - Nginx como reverse proxy con SSL termination
+
+services:
+
+  postgres:
+    ports: [] # NO exponer Postgres al exterior en producción
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  redis:
+    ports: []
+    command: >
+      redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:?Define REDIS_PASSWORD para producción}
+
+  odoo:
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    restart: always
+
+  nextjs:
+    build:
+      target: production
+    environment:
+      NODE_ENV: production
+    restart: always
+    volumes:
+      # En producción no montamos el código fuente (está en la imagen)
+      - nextjs_next_cache:/app/.next
+
+  nginx:
+    image: nginx:alpine
+    container_name: casajanus_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      - nextjs
+      - odoo
+    networks:
+      - casajanus_net
+
+volumes:
+  nginx_cache:
+    name: casajanus_nginx_cache

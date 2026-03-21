@@ -1,0 +1,239 @@
+/* components/commission/CommissionForm.module.css */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 640px;
+}
+
+/* ── Obra de referencia ──────────────────────────────────────────────── */
+.refBanner {
+  padding: 12px 16px;
+  background: rgba(196, 30, 30, 0.07);
+  border: 1px solid rgba(196, 30, 30, 0.25);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.refLabel {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #c41e1e;
+  font-family: 'Archivo', sans-serif;
+  white-space: nowrap;
+}
+
+.refName {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 16px;
+  color: #c6bdb3;
+}
+
+/* ── Layout de campos ────────────────────────────────────────────────── */
+.row    { display: grid; grid-template-columns: 1fr; }
+.rowTwo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+@media (max-width: 480px) {
+  .rowTwo { grid-template-columns: 1fr; }
+}
+
+/* ── Campo individual ────────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6a6560;
+  font-family: 'Archivo', sans-serif;
+}
+
+/* ── Inputs base ─────────────────────────────────────────────────────── */
+.input,
+.select,
+.textarea {
+  width: 100%;
+  background: #161616;
+  border: 1px solid #2c2c2c;
+  color: #f4efe9;
+  font-family: 'Archivo', sans-serif;
+  font-size: 13px;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #3f3d3a;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: #c41e1e;
+}
+
+.input:hover:not(:focus),
+.select:hover:not(:focus),
+.textarea:hover:not(:focus) {
+  border-color: #3f3d3a;
+}
+
+.inputError {
+  border-color: #8b1a1a !important;
+}
+
+/* Select arrow */
+.select {
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236a6560' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+
+.select option {
+  background: #161616;
+  color: #f4efe9;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+.charCount {
+  font-size: 10px;
+  color: #3f3d3a;
+  font-family: 'Archivo', sans-serif;
+  align-self: flex-end;
+}
+
+/* ── Errores de campo ────────────────────────────────────────────────── */
+.fieldError {
+  font-size: 11px;
+  color: #ef4444;
+  font-family: 'Archivo', sans-serif;
+}
+
+/* ── Error global ────────────────────────────────────────────────────── */
+.errorBanner {
+  padding: 12px 14px;
+  background: rgba(139, 26, 26, 0.15);
+  border: 1px solid #8b1a1a;
+  font-size: 13px;
+  color: #f4efe9;
+  font-family: 'Archivo', sans-serif;
+}
+
+/* ── Botón de envío ──────────────────────────────────────────────────── */
+.btnSubmit {
+  padding: 16px;
+  background: #c41e1e;
+  color: #f4efe9;
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btnSubmit:hover:not(:disabled) { background: #e02424; }
+.btnSubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid rgba(244, 239, 233, 0.3);
+  border-top-color: #f4efe9;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Nota de privacidad ──────────────────────────────────────────────── */
+.privacyNote {
+  font-size: 11px;
+  color: #3f3d3a;
+  line-height: 1.5;
+  font-family: 'Archivo', sans-serif;
+  margin: -4px 0 0;
+}
+
+/* ── Estado de éxito ─────────────────────────────────────────────────── */
+.successState {
+  text-align: center;
+  padding: 48px 24px;
+  animation: fadeIn 0.4s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.successIcon {
+  font-size: 32px;
+  color: #22c55e;
+  margin-bottom: 16px;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.successTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 300;
+  font-style: italic;
+  color: #f4efe9;
+  margin-bottom: 12px;
+}
+
+.successText {
+  font-size: 14px;
+  color: #c6bdb3;
+  line-height: 1.7;
+  max-width: 400px;
+  margin: 0 auto 24px;
+}
+
+.btnReset {
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #6a6560;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.btnReset:hover { color: #c6bdb3; }
+

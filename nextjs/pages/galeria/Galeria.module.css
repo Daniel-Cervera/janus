@@ -1,0 +1,141 @@
+/* pages/galeria/Galeria.module.css */
+
+.page {
+  background: #090909;
+  min-height: 100vh;
+}
+
+/* ── Hero strip ─────────────────────────────────────────────────────── */
+.hero {
+  background: #111111;
+  border-bottom: 1px solid #2c2c2c;
+  padding: 28px 24px 22px;
+}
+
+.heroLabel {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: #c41e1e;
+  font-family: 'Archivo', sans-serif;
+  font-weight: 500;
+  margin: 0 0 6px;
+}
+
+.heroTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 38px;
+  font-weight: 300;
+  font-style: italic;
+  color: #f4efe9;
+  line-height: 1.05;
+  margin: 0;
+}
+
+/* ── Técnica tabs ────────────────────────────────────────────────────── */
+.techniqueTabs {
+  background: #111111;
+  border-bottom: 1px solid #2c2c2c;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 20px;
+}
+
+.techniqueTabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  padding: 14px 18px;
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6a6560;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tab:hover   { color: #c6bdb3; }
+
+.tabActive {
+  color: #c41e1e !important;
+  border-bottom-color: #c41e1e;
+}
+
+.tabCount {
+  font-size: 9px;
+  color: #3f3d3a;
+  letter-spacing: 0;
+}
+
+/* ── Collection pills ────────────────────────────────────────────────── */
+.collectionBar {
+  background: #090909;
+  border-bottom: 1px solid #2c2c2c;
+  padding: 14px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.collectionBarLabel {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #3f3d3a;
+  font-family: 'Archivo', sans-serif;
+  margin-right: 2px;
+}
+
+.pill {
+  padding: 5px 14px;
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #6a6560;
+  background: transparent;
+  border: 1px solid #2c2c2c;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.pill:hover {
+  border-color: #6a6560;
+  color: #c6bdb3;
+}
+
+.pillActive {
+  border-color: #c41e1e !important;
+  color: #c41e1e !important;
+  background: rgba(196, 30, 30, 0.07);
+}
+
+/* ── Indicador de filtrado ───────────────────────────────────────────── */
+.filteringOverlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 80px 24px;
+}
+
+.filteringDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3f3d3a;
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(1); }
+  40%           { opacity: 1;   transform: scale(1.2); }
+}
+

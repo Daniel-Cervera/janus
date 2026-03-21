@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ── Menú raíz ─────────────────────────────────────────────── -->
+    <menuitem id="menu_casa_janus_root"
+              name="Casa Janus"
+              sequence="10"
+              web_icon="casa_janus,static/description/icon.png"/>
+
+    <!-- ── Catálogo ──────────────────────────────────────────────── -->
+    <menuitem id="menu_catalogo"
+              name="Catálogo"
+              parent="menu_casa_janus_root"
+              sequence="10"/>
+
+    <menuitem id="menu_artworks"
+              name="Obras"
+              parent="menu_catalogo"
+              action="action_artwork"
+              sequence="10"/>
+
+    <menuitem id="menu_collections"
+              name="Colecciones"
+              parent="menu_catalogo"
+              action="action_collection"
+              sequence="20"/>
+
+    <menuitem id="menu_techniques"
+              name="Técnicas"
+              parent="menu_catalogo"
+              action="action_technique"
+              sequence="30"/>
+
+    <!-- ── Galería ───────────────────────────────────────────────── -->
+    <menuitem id="menu_galeria"
+              name="Galería"
+              parent="menu_casa_janus_root"
+              sequence="20"/>
+
+    <menuitem id="menu_exhibitions"
+              name="Exposiciones"
+              parent="menu_galeria"
+              action="action_exhibition"
+              sequence="10"/>
+
+    <menuitem id="menu_artist"
+              name="Perfil del artista"
+              parent="menu_galeria"
+              action="action_artist"
+              sequence="20"/>
+
+    <!-- ── Clientes ──────────────────────────────────────────────── -->
+    <menuitem id="menu_clientes"
+              name="Clientes"
+              parent="menu_casa_janus_root"
+              sequence="30"/>
+
+    <menuitem id="menu_commissions"
+              name="Encargos"
+              parent="menu_clientes"
+              action="action_commission"
+              sequence="10"/>
+
+</odoo>

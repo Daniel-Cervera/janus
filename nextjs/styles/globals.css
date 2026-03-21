@@ -1,0 +1,165 @@
+/* styles/globals.css
+ * Sistema de diseño de Casa Janus
+ * Paleta: Negro profundo · Rojo · Blanco hueso
+ * Tipografía: Cormorant Garamond (display) + Archivo (body)
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Archivo:wght@300;400;500;600&display=swap');
+
+/* ── Tokens de diseño ─────────────────────────────────────────────── */
+:root {
+  /* Negros */
+  --cj-black:       #090909;
+  --cj-black-soft:  #111111;
+  --cj-surface:     #181818;
+  --cj-surface-2:   #202020;
+  --cj-border:      #2c2c2c;
+  --cj-border-2:    #3a3a3a;
+
+  /* Rojos — identidad */
+  --cj-red:         #c41e1e;
+  --cj-red-bright:  #e02424;
+  --cj-red-dim:     #8b1a1a;
+  --cj-red-ghost:   rgba(196, 30, 30, 0.08);
+
+  /* Blancos */
+  --cj-white:       #f4efe9;
+  --cj-white-dim:   #c6bdb3;
+  --cj-white-ghost: rgba(244, 239, 233, 0.06);
+
+  /* Grises */
+  --cj-gray:        #6a6560;
+  --cj-gray-dim:    #3f3d3a;
+
+  /* Tipografía */
+  --font-display:   'Cormorant Garamond', Georgia, serif;
+  --font-body:      'Archivo', system-ui, sans-serif;
+
+  /* Transiciones */
+  --ease-out:       cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:    cubic-bezier(0.45, 0, 0.55, 1);
+
+  /* Z-index */
+  --z-nav:          100;
+  --z-modal-bg:     200;
+  --z-modal:        210;
+  --z-toast:        300;
+}
+
+/* ── Reset ────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--cj-black);
+  color: var(--cj-white);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar personalizada ──────────────────────────────────────── */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: var(--cj-black); }
+::-webkit-scrollbar-thumb  { background: var(--cj-border-2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--cj-gray-dim); }
+
+/* ── Selección de texto ───────────────────────────────────────────── */
+::selection {
+  background: var(--cj-red);
+  color: var(--cj-white);
+}
+
+/* ── Tipografía base ──────────────────────────────────────────────── */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--cj-white);
+}
+
+p { color: var(--cj-white-dim); }
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img, video {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* ── Clases utilitarias ───────────────────────────────────────────── */
+.label-xs {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.label-sm {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+.display-serif {
+  font-family: var(--font-display);
+  font-weight: 300;
+}
+
+.display-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+}
+
+/* ── Focus visible ────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 1px solid var(--cj-red);
+  outline-offset: 2px;
+}
+
+/* ── Animación de entrada global ──────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Reducción de movimiento ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

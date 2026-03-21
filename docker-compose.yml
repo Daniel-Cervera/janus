@@ -1,0 +1,166 @@
+# docker-compose.yml
+# Casa Janus — Stack completo de desarrollo
+#
+# Servicios:
+#   postgres   — Base de datos para Odoo
+#   redis      — Caché de sesiones Odoo
+#   odoo       — Backend headless (API REST en :8069)
+#   nextjs     — Frontend Next.js (en :3000)
+#   cf_tunnel  — Cloudflare Tunnel (opcional, para HTTPS local)
+#
+# Uso:
+#   Desarrollo:   docker compose up
+#   Producción:   docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+services:
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: casajanus_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-casajanus}
+      POSTGRES_USER: ${POSTGRES_USER:-odoo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Debes definir POSTGRES_PASSWORD en .env}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" # Expuesto solo para desarrollo (Adminer, DBeaver, etc.)
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-odoo} -d ${POSTGRES_DB:-casajanus}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - casajanus_net
+
+  # ── Redis (caché de sesiones Odoo) ─────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: casajanus_redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - casajanus_net
+
+  # ── Odoo 17 ────────────────────────────────────────────────────────────
+  odoo:
+    build:
+      context: ./odoo
+      dockerfile: Dockerfile
+    container_name: casajanus_odoo
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Base de datos
+      HOST: postgres
+      PORT: "5432"
+      USER: ${POSTGRES_USER:-odoo}
+      PASSWORD: ${POSTGRES_PASSWORD}
+      DB: ${POSTGRES_DB:-casajanus}
+
+      # Odoo
+      ODOO_RC: /etc/odoo/odoo.conf
+
+      # Casa Janus — parámetros de sistema (se inyectan al init)
+      CASA_JANUS_API_TOKEN: ${CASA_JANUS_API_TOKEN:?Define CASA_JANUS_API_TOKEN}
+      CASA_JANUS_CF_IMAGES_BASE_URL: ${CF_IMAGES_BASE_URL:-}
+      CASA_JANUS_CF_ACCOUNT_ID: ${CF_ACCOUNT_ID:-}
+      CASA_JANUS_CF_IMAGES_API_TOKEN: ${CF_IMAGES_API_TOKEN:-}
+      CASA_JANUS_NEXTJS_BASE_URL: ${NEXTJS_BASE_URL:-http://nextjs:3000}
+      CASA_JANUS_NEXTJS_REVALIDATE_TOKEN: ${NEXTJS_REVALIDATE_TOKEN:-}
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - ./odoo/addons:/mnt/extra-addons:ro # módulo casa_janus
+      - ./odoo/odoo.conf:/etc/odoo/odoo.conf:ro
+    ports:
+      - "8069:8069"
+      - "8072:8072" # longpolling / websocket
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:8075/web/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - casajanus_net
+
+  # ── Next.js 14 ─────────────────────────────────────────────────────────
+  nextjs:
+    build:
+      context: ./nextjs
+      dockerfile: Dockerfile
+      target: ${NODE_ENV:-development}
+    container_name: casajanus_nextjs
+    restart: unless-stopped
+    depends_on:
+      odoo:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      ODOO_BASE_URL: http://odoo:8075
+      ODOO_API_TOKEN: ${CASA_JANUS_API_TOKEN}
+      NEXT_PUBLIC_CF_IMAGES_BASE: ${CF_IMAGES_BASE_URL:-}
+      NEXTJS_REVALIDATE_TOKEN: ${NEXTJS_REVALIDATE_TOKEN:-changeme}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+    volumes:
+      - ./nextjs:/app
+      - nextjs_node_modules:/app/node_modules # evita sobreescribir node_modules del host
+      - nextjs_next_cache:/app/.next
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:3000/api/gallery || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - casajanus_net
+
+  # ── Cloudflare Tunnel (opcional — para HTTPS en desarrollo) ────────────
+  # Para usarlo: obtén un token en dash.cloudflare.com > Zero Trust > Tunnels
+  # y defínelo en .env como CF_TUNNEL_TOKEN=<token>
+  cf_tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: casajanus_tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN:-}
+    depends_on:
+      - nextjs
+    profiles:
+      - tunnel # Solo arranca con: docker compose --profile tunnel up
+    networks:
+      - casajanus_net
+
+# ── Volumes ────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    name: casajanus_postgres_data
+  odoo_data:
+    name: casajanus_odoo_data
+  nextjs_node_modules:
+    name: casajanus_nextjs_node_modules
+  nextjs_next_cache:
+    name: casajanus_nextjs_next_cache
+
+# ── Network ────────────────────────────────────────────────────────────────
+networks:
+  casajanus_net:
+    name: casajanus_network
+    driver: bridge

@@ -1,0 +1,19 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_technique_public,casa_janus.technique public read,model_casa_janus_technique,,1,0,0,0
+access_technique_admin,casa_janus.technique admin,model_casa_janus_technique,base.group_system,1,1,1,1
+access_collection_public,casa_janus.collection public read,model_casa_janus_collection,,1,0,0,0
+access_collection_admin,casa_janus.collection admin,model_casa_janus_collection,base.group_system,1,1,1,1
+access_artwork_public,casa_janus.artwork public read,model_casa_janus_artwork,,1,0,0,0
+access_artwork_admin,casa_janus.artwork admin,model_casa_janus_artwork,base.group_system,1,1,1,1
+access_artwork_image_public,casa_janus.artwork.image public read,model_casa_janus_artwork_image,,1,0,0,0
+access_artwork_image_admin,casa_janus.artwork.image admin,model_casa_janus_artwork_image,base.group_system,1,1,1,1
+access_artist_public,casa_janus.artist public read,model_casa_janus_artist,,1,0,0,0
+access_artist_admin,casa_janus.artist admin,model_casa_janus_artist,base.group_system,1,1,1,1
+access_cv_item_public,casa_janus.artist.cv_item public read,model_casa_janus_artist_cv_item,,1,0,0,0
+access_cv_item_admin,casa_janus.artist.cv_item admin,model_casa_janus_artist_cv_item,base.group_system,1,1,1,1
+access_exhibition_public,casa_janus.exhibition public read,model_casa_janus_exhibition,,1,0,0,0
+access_exhibition_admin,casa_janus.exhibition admin,model_casa_janus_exhibition,base.group_system,1,1,1,1
+access_print_product_public,casa_janus.print_product public read,model_casa_janus_print_product,,1,0,0,0
+access_print_product_admin,casa_janus.print_product admin,model_casa_janus_print_product,base.group_system,1,1,1,1
+access_commission_create,casa_janus.commission create public,model_casa_janus_commission,,0,0,1,0
+access_commission_admin,casa_janus.commission admin,model_casa_janus_commission,base.group_system,1,1,1,1

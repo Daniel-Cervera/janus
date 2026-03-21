@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_artwork_kanban" model="ir.ui.view">
+        <field name="name">casa_janus.artwork.kanban</field>
+        <field name="model">casa_janus.artwork</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="collection_id" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="year"/>
+                <field name="availability"/>
+                <field name="price"/>
+                <field name="currency_id"/>
+                <field name="is_featured"/>
+                <field name="primary_cf_image_id"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click oe_kanban_card">
+                            <div class="o_dropdown_kanban dropdown">
+                                <a class="dropdown-toggle o-no-caret btn" data-bs-toggle="dropdown" role="button">
+                                    <span class="fa fa-ellipsis-v" title="Opciones"/>
+                                </a>
+                                <div class="dropdown-menu" role="menu">
+                                    <a role="menuitem" type="edit" class="dropdown-item">Editar</a>
+                                    <a role="menuitem" type="delete" class="dropdown-item">Archivar</a>
+                                </div>
+                            </div>
+                            <div class="oe_kanban_content">
+                                <div class="o_kanban_record_top">
+                                    <div class="o_kanban_record_headings">
+                                        <strong class="o_kanban_record_title">
+                                            <field name="name"/>
+                                        </strong>
+                                        <small class="o_kanban_record_subtitle text-muted">
+                                            <field name="year"/>
+                                        </small>
+                                    </div>
+                                    <t t-if="record.is_featured.raw_value">
+                                        <span class="badge text-bg-warning">★ Destacada</span>
+                                    </t>
+                                </div>
+                                <div class="o_kanban_record_bottom">
+                                    <div class="oe_kanban_bottom_left">
+                                        <field name="availability" widget="badge" decoration-success="availability == 'available'" decoration-danger="availability == 'sold'" decoration-warning="availability == 'reserved'" decoration-info="availability == 'nfs'"/>
+                                    </div>
+                                    <div class="oe_kanban_bottom_right">
+                                        <t t-if="record.price.raw_value">
+                                            <field name="price"/>
+                                            <field name="currency_id"/>
+                                        </t>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_artwork_tree" model="ir.ui.view">
+        <field name="name">casa_janus.artwork.tree</field>
+        <field name="model">casa_janus.artwork</field>
+        <field name="arch" type="xml">
+            <tree string="Obras" decoration-muted="availability == 'sold'" decoration-success="availability == 'available'">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="technique_id" string="Técnica"/>
+                <field name="collection_id" string="Colección"/>
+                <field name="year"/>
+                <field name="medium"/>
+                <field name="price"/>
+                <field name="currency_id" string="Mon."/>
+                <field name="availability" widget="badge" decoration-success="availability == 'available'" decoration-danger="availability == 'sold'" decoration-warning="availability == 'reserved'"/>
+                <field name="is_featured" widget="boolean_toggle" string="★"/>
+                <field name="active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_artwork_form" model="ir.ui.view">
+        <field name="name">casa_janus.artwork.form</field>
+        <field name="model">casa_janus.artwork</field>
+        <field name="arch" type="xml">
+            <form string="Obra de Arte">
+                <header>
+                    <field name="availability" widget="statusbar" statusbar_visible="available,reserved,sold,nfs"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+                        </button>
+                    </div>
+
+                    <widget name="web_ribbon" title="Destacada" bg_color="bg-warning" invisible="not is_featured"/>
+
+                    <div class="oe_title">
+                        <label for="name" string="Título de la obra"/>
+                        <h1>
+                            <field name="name" placeholder="Título de la obra"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Clasificación">
+                            <field name="collection_id"/>
+                            <field name="technique_id" readonly="True"/>
+                            <field name="year"/>
+                            <field name="slug" placeholder="titulo-de-la-obra-2023"/>
+                            <field name="sequence"/>
+                            <field name="is_featured"/>
+                        </group>
+                        <group string="Datos técnicos">
+                            <field name="medium" placeholder="Ej: Óleo sobre lino"/>
+                            <label for="width_cm" string="Dimensiones (cm)"/>
+                            <div class="o_row">
+                                <field name="height_cm" placeholder="Alto"/>
+                                <span> × </span>
+                                <field name="width_cm" placeholder="Ancho"/>
+                                <span> × </span>
+                                <field name="depth_cm" placeholder="Prof."/>
+                            </div>
+                            <field name="edition_number" string="Número de ejemplar"/>
+                            <field name="edition_total" string="Tiraje total"/>
+                            <field name="edition_display" string="Edición" readonly="True"/>
+                        </group>
+                    </group>
+
+                    <group string="Descripción">
+                        <field name="description" nolabel="1" placeholder="Descripción de la obra para el sitio web..."/>
+                    </group>
+
+                    <group string="Comercial">
+                        <group>
+                            <field name="price"/>
+                            <field name="currency_id"/>
+                            <field name="availability"/>
+                        </group>
+                        <group>
+                            <field name="product_tmpl_id" string="Producto Odoo (e-commerce)" domain="[('sale_ok','=',True)]"/>
+                        </group>
+                    </group>
+
+                    <group string="Imágenes (Cloudflare Images)">
+                        <field name="primary_cf_image_id" string="ID imagen principal" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/>
+                        <div class="text-muted" style="font-size:12px; padding: 0 8px;">
+                            Sube imágenes en
+                            <a href="https://dash.cloudflare.com" target="_blank">
+                                dash.cloudflare.com → Images
+                            </a>
+                            y pega aquí el ID generado.
+                        </div>
+                    </group>
+
+                    <notebook>
+                        <page string="Galería de imágenes" name="images">
+                            <field name="image_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="cf_image_id" string="Cloudflare Image ID" placeholder="uuid"/>
+                                    <field name="is_primary" string="Principal"/>
+                                    <field name="alt_text" string="Texto alternativo (SEO)"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Prints / Reproducciones" name="prints">
+                            <field name="print_product_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="size_label" placeholder="Ej: A4 (21×30 cm)"/>
+                                    <field name="paper_type"/>
+                                    <field name="price"/>
+                                    <field name="stock_qty"/>
+                                    <field name="product_tmpl_id" string="Producto Odoo"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="SEO" name="seo">
+                            <group>
+                                <field name="meta_title" placeholder="Título SEO (max 60 chars)"/>
+                                <field name="meta_description" placeholder="Meta descripción (max 160 chars)"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_artwork_search" model="ir.ui.view">
+        <field name="name">casa_janus.artwork.search</field>
+        <field name="model">casa_janus.artwork</field>
+        <field name="arch" type="xml">
+            <search string="Buscar obras">
+                <field name="name"/>
+                <field name="technique_id"/>
+                <field name="collection_id"/>
+                <field name="medium"/>
+                <filter name="available" string="Disponibles" domain="[('availability','=','available')]"/>
+                <filter name="sold" string="Vendidas" domain="[('availability','=','sold')]"/>
+                <filter name="featured" string="Destacadas" domain="[('is_featured','=',True)]"/>
+                <filter name="active" string="Activas" domain="[('active','=',True)]"/>
+                <separator/>
+                <group expand="1" string="Agrupar por">
+                    <filter name="group_collection" string="Colección" context="{'group_by': 'collection_id'}"/>
+                    <filter name="group_technique" string="Técnica" context="{'group_by': 'technique_id'}"/>
+                    <filter name="group_year" string="Año" context="{'group_by': 'year'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_technique" model="ir.actions.act_window">
+        <field name="name">Técnicas</field>
+        <field name="res_model">casa_janus.technique</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+</odoo>
