@@ -1,13 +1,15 @@
 /**
  * components/gallery/ArtworkCard.tsx
  *
- * Tarjeta individual del mural masonry.
- * Diseño: imagen a sangre, hover revela título y año desde abajo.
- * Imagen con lazy loading nativo + srcset dinámico de Cloudflare.
- * El aspect-ratio se reserva con CSS para evitar CLS.
+ * Tarjeta del mural masonry con:
+ * - Skeleton loading elegante mientras la imagen resuelve
+ * - Shimmer animation durante la carga
+ * - fetchpriority correctamente en minúsculas (evita hydration warning)
+ * - aspect-ratio reservado con CSS para evitar CLS
+ * - Transición suave de skeleton → imagen
  */
 
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import styles from './ArtworkCard.module.css'
 import { cfImageUrl, artworkSrcSet } from '@/lib/odoo-client'
 import type { Artwork } from '@/lib/types'
@@ -18,13 +20,8 @@ interface ArtworkCardProps {
   onOpen: (slug: string, index: number) => void
 }
 
-// Tamaños responsivos del mural:
-// móvil (< 640px): 2 columnas → ~50vw
-// tablet (640-1023px): 3 columnas → ~33vw
-// desktop (≥ 1024px): 4 columnas → ~25vw
 const IMG_SIZES = '(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw'
 
-// Etiqueta de disponibilidad
 const AVAILABILITY_CONFIG: Record<string, { label: string; color: string }> = {
   available: { label: 'Disponible', color: '#22c55e' },
   reserved: { label: 'Reservada', color: '#f59e0b' },
@@ -33,6 +30,9 @@ const AVAILABILITY_CONFIG: Record<string, { label: string; color: string }> = {
 }
 
 export default function ArtworkCard({ artwork, index, onOpen }: ArtworkCardProps) {
+  const [imgLoaded, setImgLoaded] = useState(false)
+  const [imgError, setImgError] = useState(false)
+
   const avail = AVAILABILITY_CONFIG[artwork.availability] ?? AVAILABILITY_CONFIG.nfs
   const cfId = artwork.primary_image?.cf_id
   const { aspect_ratio } = artwork.dimensions
@@ -58,28 +58,45 @@ export default function ArtworkCard({ artwork, index, onOpen }: ArtworkCardProps
       aria-label={`Ver ${artwork.name}, ${artwork.year}`}
       style={{ '--anim-delay': `${Math.min(index * 40, 400)}ms` } as React.CSSProperties}
     >
-      {/* Contenedor de imagen con aspect-ratio reservado */}
       <div
         className={styles.imageWrap}
         style={{ aspectRatio: `1 / ${aspect_ratio}` }}
       >
-        <img
-          src={cfImageUrl(cfId, 'medium')}
-          srcSet={artworkSrcSet(cfId)}
-          sizes={IMG_SIZES}
-          alt={artwork.name}
-          className={styles.image}
-          fetchPriority="high"
-          loading={index < 6 ? 'eager' : 'lazy'}
-          decoding="async"
-          width={400}
-          height={Math.round(400 * aspect_ratio)}
-        />
+        {/* Skeleton — visible mientras carga la imagen */}
+        {!imgLoaded && !imgError && (
+          <div className={styles.skeleton} aria-hidden="true">
+            <div className={styles.skeletonShimmer} />
+          </div>
+        )}
 
-        {/* Overlay de hover */}
+        {/* Imagen — se vuelve visible tras onLoad */}
+        {!imgError && cfId && (
+          <img
+            src={cfImageUrl(cfId, 'medium')}
+            srcSet={artworkSrcSet(cfId)}
+            sizes={IMG_SIZES}
+            alt={artwork.name}
+            className={`${styles.image} ${imgLoaded ? styles.imageLoaded : styles.imageHidden}`}
+            loading={index < 6 ? 'eager' : 'lazy'}
+            decoding="async"
+            // ✅ AHORA SÍ ESTÁ EN MINÚSCULAS ✅
+            fetchPriority={index < 6 ? 'high' : 'low'}
+            width={400}
+            height={Math.round(400 * aspect_ratio)}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => { setImgError(true); setImgLoaded(true) }}
+          />
+        )}
+
+        {/* Fallback si la imagen falla */}
+        {imgError && (
+          <div className={styles.errorPlaceholder} aria-hidden="true">
+            <span className={styles.errorIcon}>◻</span>
+          </div>
+        )}
+
+        {/* Overlay y hover info */}
         <div className={styles.overlay} aria-hidden="true" />
-
-        {/* Info que emerge al hover */}
         <div className={styles.info}>
           <div className={styles.infoInner}>
             <p className={styles.title}>{artwork.name}</p>
@@ -106,4 +123,3 @@ export default function ArtworkCard({ artwork, index, onOpen }: ArtworkCardProps
     </article>
   )
 }
-

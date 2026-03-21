@@ -24,7 +24,7 @@ export default function Home({ techniques, featuredArtworks }: HomeProps) {
         <section className={styles.hero}>
           <div className={styles.heroContent}>
             <p className={styles.heroLabel}>Galería de Arte</p>
-            <h1 className={styles.heroTitle}>Casa Janus</h1>
+            <h1 className={styles.heroTitle}>JANUS</h1>
             <p className={styles.heroSub}>
               Obras únicas que dialogan entre la tradición y lo contemporáneo.
             </p>
