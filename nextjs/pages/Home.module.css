@@ -3,7 +3,7 @@
   background: #090909;
   min-height: 100vh;
   color: #f4efe9;
-  font-family: 'Archivo', sans-serif;
+  font-family: "Archivo", sans-serif;
 }
 
 /* ── Hero ────────────────────────────────────────────────────── */
@@ -31,7 +31,7 @@
 }
 
 .heroTitle {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Cormorant Garamond", serif;
   font-size: clamp(56px, 10vw, 100px);
   font-weight: 300;
   font-style: italic;
@@ -63,7 +63,9 @@
   transition: background 0.2s;
 }
 
-.heroCta:hover { background: #e02424; }
+.heroCta:hover {
+  background: #e02424;
+}
 
 /* ── Secciones ───────────────────────────────────────────────── */
 .sectionHeader {
@@ -81,7 +83,7 @@
 }
 
 .sectionTitle {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 40px;
   font-weight: 300;
   font-style: italic;
@@ -109,11 +111,15 @@
 }
 
 @media (max-width: 768px) {
-  .featuredGrid { grid-template-columns: repeat(2, 1fr); }
+  .featuredGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 480px) {
-  .featuredGrid { grid-template-columns: 1fr; }
+  .featuredGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .featuredCard {
@@ -152,7 +158,7 @@
 }
 
 .featuredTitle {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 17px;
   font-style: italic;
   color: #f4efe9;
@@ -193,10 +199,12 @@
   position: relative;
 }
 
-.techCard:hover { background: #111111; }
+.techCard:hover {
+  background: #111111;
+}
 
 .techName {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 28px;
   font-weight: 300;
   font-style: italic;
@@ -224,7 +232,9 @@
   color: #3f3d3a;
   margin-top: auto;
   padding-top: 16px;
-  transition: color 0.2s, transform 0.2s;
+  transition:
+    color 0.2s,
+    transform 0.2s;
 }
 
 .techCard:hover .techArrow {
@@ -244,7 +254,7 @@
 }
 
 .contactTitle {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 36px;
   font-weight: 300;
   font-style: italic;
@@ -268,7 +278,9 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   text-decoration: none;
-  transition: border-color 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
 }
 
 .ctaSecondary:hover {

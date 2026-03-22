@@ -158,7 +158,7 @@
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: rgba(244, 239, 233, 0.55);
-  font-family: "Archivo", sans-serif;
+  font-family: "Montserrat", sans-serif;
   margin: 0 0 20px;
   animation: heroFadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
 }
@@ -190,7 +190,7 @@
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: rgba(244, 239, 233, 0.7);
-  font-family: "Archivo", sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-weight: 300;
   margin: 0 0 48px;
   line-height: 1.6;
@@ -212,7 +212,7 @@
   padding: 16px 40px;
   background: #c41e1e;
   color: #f4efe9;
-  font-family: "Archivo", sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -235,7 +235,7 @@
   padding: 15px 36px;
   background: transparent;
   color: rgba(244, 239, 233, 0.85);
-  font-family: "Archivo", sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -292,7 +292,7 @@
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: rgba(244, 239, 233, 0.35);
-  font-family: "Archivo", sans-serif;
+  font-family: "Montserrat", sans-serif;
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */
