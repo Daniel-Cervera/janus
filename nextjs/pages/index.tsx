@@ -1,12 +1,23 @@
+/**
+ * pages/index.tsx
+ *
+ * Landing page de Janus con:
+ *  - Hero con video blur (HeroSection)
+ *  - Botones con espaciado correcto (gap en flex)
+ *  - CTA "Statement" navegando client-side a /biography
+ *  - Obras destacadas y técnicas desde Odoo (ISR)
+ */
+
 import { GetStaticProps } from 'next'
 import Head from 'next/head'
 import Link from 'next/link'
 import { getTechniques, getArtworks } from '@/lib/odoo-client'
 import type { Technique, Artwork } from '@/lib/types'
+import HeroSection from '@/components/hero/HeroSection'
 import styles from './Home.module.css'
 
 interface HomeProps {
-  techniques: Technique[]
+  techniques:       Technique[]
   featuredArtworks: Artwork[]
 }
 
@@ -14,25 +25,41 @@ export default function Home({ techniques, featuredArtworks }: HomeProps) {
   return (
     <>
       <Head>
-        <title>Casa Janus — Galería de Arte</title>
-        <meta name="description" content="Galería de arte contemporáneo. Explora obras únicas por técnica y colección." />
+        <title>Janus — Arte Visual Contemporáneo</title>
+        <meta
+          name="description"
+          content="Israel Cortés 'Janus'. Arte abstracto y figurativo. Textura, color y memoria."
+        />
+        <meta property="og:title"       content="Janus — Arte Visual Contemporáneo" />
+        <meta property="og:description" content="Textura · Abstracción · Memoria" />
+        <meta property="og:type"        content="website" />
+        {/* URL canónica dinámica según entorno */}
+        <link
+          rel="canonical"
+          href={`${process.env.NEXT_PUBLIC_SITE_URL ?? ''}/`}
+        />
       </Head>
 
       <main className={styles.main}>
 
-        {/* ── Hero ─────────────────────────────────────────────── */}
-        <section className={styles.hero}>
-          <div className={styles.heroContent}>
-            <p className={styles.heroLabel}>Galería de Arte</p>
-            <h1 className={styles.heroTitle}>JANUS</h1>
-            <p className={styles.heroSub}>
-              Obras únicas que dialogan entre la tradición y lo contemporáneo.
-            </p>
-            <Link href="/galeria" className={styles.heroCta}>
-              Explorar la colección
-            </Link>
-          </div>
-        </section>
+        {/* ── TAREA 1 y 2: Hero con video + botones corregidos ── */}
+        {/*
+          Los botones viven dentro de HeroSection.
+          El espaciado se controla con gap en el ctaGroup.
+          Ver HeroSection.module.css → .ctaGroup { gap: 16px }
+
+          TAREA 3: el botón "Statement del artista" navega a /biography
+          via client-side routing de Next.js (Link — sin recarga de página).
+        */}
+        <HeroSection
+          artistName="Janus"
+          tagline="Textura · Abstracción · Memoria"
+          ctaPrimaryText="Explorar la galería"
+          ctaPrimaryHref="/galeria"
+          ctaSecondaryText="Statement del artista"
+          ctaSecondaryHref="/biography"
+          fallbackImageSrc="/images/hero-fallback.jpg"
+        />
 
         {/* ── Obras destacadas ──────────────────────────────────── */}
         {featuredArtworks.length > 0 && (
@@ -104,6 +131,24 @@ export default function Home({ techniques, featuredArtworks }: HomeProps) {
           </section>
         )}
 
+        {/* ── CTA hacia Statement/Biografía ─────────────────────── */}
+        {/* Tarea 3: segundo punto de entrada a /biography */}
+        <section className={styles.statementCta}>
+          <div className={styles.statementInner}>
+            <p className={styles.statementEyebrow}>Sobre el artista</p>
+            <h2 className={styles.statementTitle}>
+              "La textura tiene alma, emoción, cierta fragilidad."
+            </h2>
+            <p className={styles.statementExcerpt}>
+              Israel Cortés explora el diálogo entre lo abstracto y lo figurativo,
+              lo geométrico y lo orgánico, desde una memoria visual profundamente mexicana.
+            </p>
+            <Link href="/biography" className={styles.heroCta}>
+              Leer el statement completo
+            </Link>
+          </div>
+        </section>
+
         {/* ── Contacto ──────────────────────────────────────────── */}
         <section className={styles.contact}>
           <div className={styles.contactInner}>
@@ -111,9 +156,14 @@ export default function Home({ techniques, featuredArtworks }: HomeProps) {
             <p className={styles.contactText}>
               Consulta disponibilidad o solicita un encargo personalizado.
             </p>
-            <Link href="/encargos" className={styles.heroCta}>
-              Contactar al artista
-            </Link>
+            <div className={styles.contactCtas}>
+              <Link href="/encargos" className={styles.heroCta}>
+                Contactar al artista
+              </Link>
+              <Link href="/biography#contacto" className={styles.ctaSecondary}>
+                Conocer más
+              </Link>
+            </div>
           </div>
         </section>
 

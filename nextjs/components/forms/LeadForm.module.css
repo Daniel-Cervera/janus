@@ -1,0 +1,200 @@
+/* components/forms/LeadForm.module.css */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+}
+
+/* ── Campos ──────────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rowTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .rowTwo { grid-template-columns: 1fr; }
+}
+
+/* ── Labels ──────────────────────────────────────────────────── */
+.label {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #6a6560;
+  font-family: 'Archivo', sans-serif;
+}
+
+.required { color: #c41e1e; margin-left: 2px; }
+.optional { color: #3f3d3a; font-weight: 300; text-transform: none; letter-spacing: 0; }
+
+/* ── Inputs ──────────────────────────────────────────────────── */
+.input,
+.textarea {
+  background: #1a1a1a;
+  border: 1px solid #2c2c2c;
+  color: #f4efe9;
+  font-family: 'Archivo', sans-serif;
+  font-size: 14px;
+  padding: 13px 16px;
+  transition: border-color 0.2s, background 0.2s;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #3f3d3a;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: #c41e1e;
+  background: #1f1f1f;
+}
+
+.inputError {
+  border-color: #8b1a1a !important;
+  background: rgba(139, 26, 26, 0.08) !important;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* ── Caracteres ──────────────────────────────────────────────── */
+.charCount {
+  font-size: 11px;
+  color: #3f3d3a;
+  text-align: right;
+  font-family: 'Archivo', sans-serif;
+  margin-top: 2px;
+}
+
+/* ── Errores de campo ────────────────────────────────────────── */
+.fieldError {
+  font-size: 11px;
+  color: #ef4444;
+  font-family: 'Archivo', sans-serif;
+  letter-spacing: 0.05em;
+}
+
+/* ── Error global ────────────────────────────────────────────── */
+.errorBanner {
+  padding: 12px 16px;
+  background: rgba(139, 26, 26, 0.15);
+  border: 1px solid #8b1a1a;
+  font-size: 13px;
+  color: #f4efe9;
+  font-family: 'Archivo', sans-serif;
+}
+
+/* ── Submit ──────────────────────────────────────────────────── */
+.submitBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 40px;
+  min-height: 52px;
+  background: #c41e1e;
+  color: #f4efe9;
+  border: none;
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.submitBtn:hover:not(:disabled) { background: #e02424; }
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Spinner ─────────────────────────────────────────────────── */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid rgba(244, 239, 233, 0.3);
+  border-top-color: #f4efe9;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Nota de privacidad ──────────────────────────────────────── */
+.privacyNote {
+  font-size: 11px;
+  color: #3f3d3a;
+  margin: 0;
+  text-align: center;
+  font-family: 'Archivo', sans-serif;
+  letter-spacing: 0.05em;
+}
+
+/* ── Estado de éxito ─────────────────────────────────────────── */
+.successState {
+  text-align: center;
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.successIcon {
+  font-size: 40px;
+  color: #22c55e;
+}
+
+.successTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-style: italic;
+  font-weight: 300;
+  color: #f4efe9;
+  margin: 0;
+}
+
+.successText {
+  font-size: 14px;
+  color: #6a6560;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 380px;
+}
+
+.resetBtn {
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid #2c2c2c;
+  color: #6a6560;
+  font-family: 'Archivo', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.resetBtn:hover {
+  color: #f4efe9;
+  border-color: #6a6560;
+}
