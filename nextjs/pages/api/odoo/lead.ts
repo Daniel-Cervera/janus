@@ -99,7 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const parsed = LeadSchema.safeParse(req.body)
   if (!parsed.success) {
     const errors: Record<string, string> = {}
-    parsed.error.errors.forEach(e => { errors[e.path[0]?.toString() ?? 'general'] = e.message })
+    parsed.error.issues.forEach(e => { errors[e.path[0]?.toString() ?? 'general'] = e.message })
     return res.status(422).json({ errors })
   }
 
