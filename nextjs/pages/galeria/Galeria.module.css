@@ -1,141 +1,309 @@
-/* pages/galeria/Galeria.module.css */
+/* pages/galeria/Galeria.module.css (v2) */
 
 .page {
   background: #090909;
   min-height: 100vh;
+  color: #f4efe9;
+  font-family: "Archivo", sans-serif;
 }
 
-/* ── Hero strip ─────────────────────────────────────────────────────── */
+/* ── Hero ──────────────────────────────────────────────────────── */
 .hero {
-  background: #111111;
+  background: #111;
   border-bottom: 1px solid #2c2c2c;
-  padding: 28px 24px 22px;
+  padding: 32px 24px 20px;
 }
 
 .heroLabel {
   font-size: 10px;
   letter-spacing: 0.28em;
+  text-transform: uppercase;
   color: #c41e1e;
-  font-family: 'Archivo', sans-serif;
-  font-weight: 500;
   margin: 0 0 6px;
 }
 
 .heroTitle {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 38px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(36px, 6vw, 64px);
   font-weight: 300;
   font-style: italic;
   color: #f4efe9;
-  line-height: 1.05;
+  line-height: 1;
   margin: 0;
+  letter-spacing: -0.01em;
+  align-items: center;
 }
 
-/* ── Técnica tabs ────────────────────────────────────────────────────── */
+.heroDesc {
+  font-size: 13px;
+  color: #6a6560;
+  margin: 10px 0 0;
+  line-height: 1.6;
+  max-width: 480px;
+}
+
+/* ── Tabs de técnica ───────────────────────────────────────────── */
 .techniqueTabs {
-  background: #111111;
+  background: #111;
   border-bottom: 1px solid #2c2c2c;
+  padding: 0 20px;
   display: flex;
+  gap: 0;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 0 20px;
 }
-
-.techniqueTabs::-webkit-scrollbar { display: none; }
+.techniqueTabs::-webkit-scrollbar {
+  display: none;
+}
 
 .tab {
   padding: 14px 18px;
-  font-family: 'Archivo', sans-serif;
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #6a6560;
   background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
   cursor: pointer;
+  border-bottom: 2px solid transparent;
   white-space: nowrap;
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
   display: flex;
   align-items: center;
   gap: 7px;
 }
-
-.tab:hover   { color: #c6bdb3; }
-
+.tab:hover {
+  color: #c6bdb3;
+}
 .tabActive {
   color: #c41e1e !important;
   border-bottom-color: #c41e1e;
 }
 
 .tabCount {
-  font-size: 9px;
-  color: #3f3d3a;
+  font-size: 10px;
+  background: rgba(196, 30, 30, 0.12);
+  color: #c41e1e;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-weight: 500;
   letter-spacing: 0;
 }
 
-/* ── Collection pills ────────────────────────────────────────────────── */
-.collectionBar {
-  background: #090909;
-  border-bottom: 1px solid #2c2c2c;
-  padding: 14px 20px;
+/* ── Barra secundaria ──────────────────────────────────────────── */
+.secondaryBar {
+  background: #0d0d0d;
+  border-bottom: 1px solid #1a1a1a;
+  padding: 10px 20px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 48px;
 }
 
-.collectionBarLabel {
+.barLabel {
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: #3f3d3a;
-  font-family: 'Archivo', sans-serif;
-  margin-right: 2px;
+  flex-shrink: 0;
+}
+
+.collectionBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
 }
 
 .pill {
-  padding: 5px 14px;
-  font-family: 'Archivo', sans-serif;
+  padding: 4px 12px;
   font-size: 11px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
+  border: 1px solid #2c2c2c;
   color: #6a6560;
   background: transparent;
-  border: 1px solid #2c2c2c;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
-
 .pill:hover {
   border-color: #6a6560;
   color: #c6bdb3;
 }
-
 .pillActive {
-  border-color: #c41e1e !important;
-  color: #c41e1e !important;
-  background: rgba(196, 30, 30, 0.07);
+  border-color: #c41e1e;
+  color: #c41e1e;
+  background: rgba(196, 30, 30, 0.08);
 }
 
-/* ── Indicador de filtrado ───────────────────────────────────────────── */
-.filteringOverlay {
+.pillCount {
+  font-size: 9px;
+  color: inherit;
+  opacity: 0.7;
+  letter-spacing: 0;
+}
+
+/* Filtros de disponibilidad */
+.availBar {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.filterBtn {
+  padding: 3px 10px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #3f3d3a;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filterBtn:hover {
+  color: #6a6560;
+  border-color: #2c2c2c;
+}
+.filterBtnActive {
+  color: #c41e1e;
+  border-color: #c41e1e;
+  background: rgba(196, 30, 30, 0.06);
+}
+
+/* ── Barra de resultados ────────────────────────────────────────── */
+.resultsBar {
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.resultsCount {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #3f3d3a;
+}
+
+.clearFilters {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6a6560;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.clearFilters:hover {
+  color: #c41e1e;
+}
+
+/* ── Estado de filtrado ─────────────────────────────────────────── */
+.filteringState {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 80px 24px;
+  gap: 8px;
+  padding: 80px 0;
 }
 
-.filteringDot {
+.dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #3f3d3a;
-  animation: blink 1.2s ease-in-out infinite;
+  background: #c41e1e;
+  animation: dotPulse 1s ease-in-out infinite;
+}
+@keyframes dotPulse {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
 }
 
-@keyframes blink {
-  0%, 80%, 100% { opacity: 0.3; transform: scale(1); }
-  40%           { opacity: 1;   transform: scale(1.2); }
+/* ── FAB de selección ───────────────────────────────────────────── */
+.selectionFab {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #c41e1e;
+  color: #f4efe9;
+  border: none;
+  cursor: pointer;
+  font-family: "Archivo", sans-serif;
+  box-shadow: 0 4px 24px rgba(196, 30, 30, 0.4);
+  animation: fabAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition:
+    background 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.selectionFab:hover {
+  background: #e02424;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(196, 30, 30, 0.5);
 }
 
+@keyframes fabAppear {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.fabCount {
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 16px;
+  text-align: center;
+}
+
+.fabLabel {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 480px) {
+  .fabLabel {
+    display: none;
+  }
+  .selectionFab {
+    padding: 14px;
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    justify-content: center;
+  }
+  .fabCount {
+    display: none;
+  }
+}

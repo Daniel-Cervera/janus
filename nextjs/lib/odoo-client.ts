@@ -1,19 +1,19 @@
 /**
  * lib/odoo-client.ts
- * Cliente tipado para la API headless de Casa Janus (Odoo).
+ * Cliente tipado y validado con Zod para la API headless de Casa Janus (Odoo).
  */
 
-import type {
-  Technique,
-  Collection,
-  Artwork,
-  ArtworkDetail,
-  Artist,
-  Exhibition,
-  CommissionPayload,
-  CommissionResponse,
-  ListResponse,
-} from './types'
+import { z } from 'zod'
+import {
+  TechniqueSchema,
+  CollectionSchema,
+  ArtworkSchema,
+  ArtistSchema,
+  ExhibitionSchema,
+  CommissionResponseSchema,
+  createListResponseSchema
+} from './schemas'
+import type { CommissionPayload } from './types'
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -24,7 +24,6 @@ const API_PREFIX = `${ODOO_BASE}/api/v1`
 // ── Cloudflare Images helpers ─────────────────────────────────────────────────
 
 export type CFVariant = 'thumb' | 'medium' | 'large' | 'public'
-
 const CF_BASE = process.env.NEXT_PUBLIC_CF_IMAGES_BASE?.replace(/\/$/, '') ?? ''
 
 const VARIANT_SIZES: Record<CFVariant, number> = {
@@ -34,32 +33,17 @@ const VARIANT_SIZES: Record<CFVariant, number> = {
   public: 800,
 }
 
-/**
- * Construye una URL de imagen.
- * - IDs que empiezan con "test-" o "demo-" → Picsum (sin Cloudflare)
- * - IDs reales → Cloudflare Images
- */
-export function cfImageUrl(
-  cfId: string | null | undefined,
-  variant: CFVariant = 'public',
-): string {
+export function cfImageUrl(cfId: string | null | undefined, variant: CFVariant = 'public'): string {
   if (!cfId) return '/images/placeholder-obra.jpg'
-
-  // Modo pruebas — usa Picsum Photos (imágenes gratuitas, sin Cloudflare)
   if (cfId.startsWith('test-') || cfId.startsWith('demo-')) {
     const seed = cfId.replace(/^(test|demo)-/, '') || '1'
     const size = VARIANT_SIZES[variant]
     return `https://picsum.photos/seed/${seed}/${size}/${size}`
   }
-
-  // Producción — Cloudflare Images
   if (!CF_BASE) return '/images/placeholder-obra.jpg'
   return `${CF_BASE}/${cfId}/${variant}`
 }
 
-/**
- * Genera el srcset para <img srcSet> en el mural masonry.
- */
 export function artworkSrcSet(cfId: string | null | undefined): string {
   if (!cfId) return ''
   return [
@@ -77,14 +61,16 @@ interface FetchOptions {
   tags?: string[]
 }
 
-async function apiFetch<T>(endpoint: string, opts: FetchOptions = {}): Promise<T> {
-  // FIX: advertir solo en runtime, no en build time
+export class OdooAPIError extends Error {
+  constructor(public readonly status: number, public readonly endpoint: string, public readonly body: string) {
+    super(`Odoo API ${status} at ${endpoint}`)
+    this.name = 'OdooAPIError'
+  }
+}
+
+async function apiFetch<T>(endpoint: string, schema: z.ZodType<T>, opts: FetchOptions = {}): Promise<T> {
   if (!ODOO_BASE || !API_TOKEN) {
-    throw new OdooAPIError(
-      503,
-      endpoint,
-      'ODOO_BASE_URL or ODOO_API_TOKEN is not set in environment variables.',
-    )
+    console.warn('[WARN] ODOO_BASE_URL o ODOO_API_TOKEN no están configurados.')
   }
 
   const url = new URL(`${API_PREFIX}${endpoint}`)
@@ -94,10 +80,6 @@ async function apiFetch<T>(endpoint: string, opts: FetchOptions = {}): Promise<T
       if (v !== undefined && v !== null) url.searchParams.set(k, String(v))
     })
   }
-
-  // 👇 LOGS DE DEBUGGEO (Colocados antes del fetch) 👇
-  console.log(`\n[DEBUG ODOO] Endpoint: ${url.toString()}`)
-  console.log(`[DEBUG ODOO] Token detectado: "${API_TOKEN}"\n`)
 
   const res = await fetch(url.toString(), {
     headers: {
@@ -115,24 +97,28 @@ async function apiFetch<T>(endpoint: string, opts: FetchOptions = {}): Promise<T
     throw new OdooAPIError(res.status, endpoint, errorBody)
   }
 
-  return res.json() as Promise<T>
-}
+  const rawData = await res.json()
 
-export class OdooAPIError extends Error {
-  constructor(
-    public readonly status: number,
-    public readonly endpoint: string,
-    public readonly body: string,
-  ) {
-    super(`Odoo API ${status} at ${endpoint}`)
-    this.name = 'OdooAPIError'
+  try {
+    return schema.parse(rawData)
+  } catch (error) {
+    // 🔥 CAMBIO AQUÍ: Mejoramos los logs para saber exactamente por qué falla Zod
+    if (error instanceof z.ZodError) {
+      console.error(`\n🚨 [ZOD ERROR] Validación falló en: ${endpoint}`);
+      console.error("Payload recibido de Odoo:", JSON.stringify(rawData, null, 2));
+      console.error("Problemas detectados:", JSON.stringify(error.issues, null, 2));
+    } else {
+      console.error(`[Error inesperado] Fallo en ${endpoint}:`, error)
+    }
+    throw new Error(`Data validation failed for ${endpoint}`)
   }
 }
 
 // ── API methods ───────────────────────────────────────────────────────────────
 
-export async function getTechniques(withCollections = false): Promise<Technique[]> {
-  const data = await apiFetch<ListResponse<Technique>>('/techniques', {
+export async function getTechniques(withCollections = false) {
+  const schema = createListResponseSchema(TechniqueSchema)
+  const data = await apiFetch('/techniques', schema, {
     params: { with_collections: withCollections },
     revalidate: 3600,
     tags: ['techniques'],
@@ -140,12 +126,9 @@ export async function getTechniques(withCollections = false): Promise<Technique[
   return data.data
 }
 
-export async function getCollections(opts: {
-  techniqueSlug?: string
-  techniqueId?: number
-  withArtworks?: boolean
-} = {}): Promise<Collection[]> {
-  const data = await apiFetch<ListResponse<Collection>>('/collections', {
+export async function getCollections(opts: { techniqueSlug?: string; techniqueId?: number; withArtworks?: boolean } = {}) {
+  const schema = createListResponseSchema(CollectionSchema)
+  const data = await apiFetch('/collections', schema, {
     params: {
       ...(opts.techniqueSlug ? { technique_slug: opts.techniqueSlug } : {}),
       ...(opts.techniqueId ? { technique_id: opts.techniqueId } : {}),
@@ -157,16 +140,9 @@ export async function getCollections(opts: {
   return data.data
 }
 
-export async function getArtworks(opts: {
-  techniqueSlug?: string
-  collectionSlug?: string
-  availability?: 'available' | 'sold' | 'reserved' | 'nfs'
-  featured?: boolean
-  page?: number
-  perPage?: number
-  order?: 'year_desc' | 'year_asc' | 'name_asc' | 'sequence'
-} = {}): Promise<ListResponse<Artwork>> {
-  return apiFetch<ListResponse<Artwork>>('/artworks', {
+export async function getArtworks(opts: { techniqueSlug?: string; collectionSlug?: string; availability?: 'available' | 'sold' | 'reserved' | 'nfs'; featured?: boolean; page?: number; perPage?: number; order?: 'year_desc' | 'year_asc' | 'name_asc' | 'sequence' } = {}) {
+  const schema = createListResponseSchema(ArtworkSchema)
+  return apiFetch('/artworks', schema, {
     params: {
       ...(opts.techniqueSlug ? { technique_slug: opts.techniqueSlug } : {}),
       ...(opts.collectionSlug ? { collection_slug: opts.collectionSlug } : {}),
@@ -185,9 +161,10 @@ export async function getArtworks(opts: {
   })
 }
 
-export async function getArtwork(slug: string): Promise<ArtworkDetail | null> {
+export async function getArtwork(slug: string) {
+  const schema = z.object({ data: ArtworkSchema })
   try {
-    const data = await apiFetch<{ data: ArtworkDetail }>(`/artwork/${slug}`, {
+    const data = await apiFetch(`/artwork/${slug}`, schema, {
       revalidate: 600,
       tags: [`artwork:${slug}`, 'artworks'],
     })
@@ -198,9 +175,10 @@ export async function getArtwork(slug: string): Promise<ArtworkDetail | null> {
   }
 }
 
-export async function getArtist(): Promise<Artist | null> {
+export async function getArtist() {
+  const schema = z.object({ data: ArtistSchema })
   try {
-    const data = await apiFetch<{ data: Artist }>('/artist', {
+    const data = await apiFetch('/artist', schema, {
       revalidate: 86400,
       tags: ['artist'],
     })
@@ -211,24 +189,17 @@ export async function getArtist(): Promise<Artist | null> {
   }
 }
 
-export async function getExhibitions(opts: {
-  state?: 'upcoming' | 'active' | 'past' | 'all'
-  limit?: number
-} = {}): Promise<Exhibition[]> {
-  const data = await apiFetch<ListResponse<Exhibition>>('/exhibitions', {
-    params: {
-      state: opts.state ?? 'all',
-      limit: opts.limit ?? 20,
-    },
+export async function getExhibitions(opts: { state?: 'upcoming' | 'active' | 'past' | 'all'; limit?: number } = {}) {
+  const schema = createListResponseSchema(ExhibitionSchema)
+  const data = await apiFetch('/exhibitions', schema, {
+    params: { state: opts.state ?? 'all', limit: opts.limit ?? 20 },
     revalidate: 3600,
     tags: ['exhibitions'],
   })
   return data.data
 }
 
-export async function submitCommission(
-  payload: CommissionPayload,
-): Promise<CommissionResponse> {
+export async function submitCommission(payload: CommissionPayload) {
   const res = await fetch(`${API_PREFIX}/commission`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -238,24 +209,21 @@ export async function submitCommission(
     const body = await res.json().catch(() => ({}))
     throw new OdooAPIError(res.status, '/commission', JSON.stringify(body))
   }
-  return res.json()
+  const rawData = await res.json()
+  return CommissionResponseSchema.parse(rawData)
 }
 
 // ── Static path helpers ───────────────────────────────────────────────────────
 
 export async function getAllArtworkSlugs(): Promise<string[]> {
   const results: string[] = []
-  let page = 1
-  let fetched = 0
-  let total = 0
-
+  let page = 1; let fetched = 0; let total = 0
   try {
     const first = await getArtworks({ page: 1, perPage: 100 })
     total = first.total ?? 0
     first.data.forEach(a => results.push(a.slug))
     fetched = first.data.length
     page = 2
-
     while (fetched < total) {
       const res = await getArtworks({ page, perPage: 100 })
       if (!res.data?.length) break
@@ -266,7 +234,6 @@ export async function getAllArtworkSlugs(): Promise<string[]> {
   } catch (error) {
     console.error('[odoo-client] getAllArtworkSlugs error:', error)
   }
-
   return results
 }
 

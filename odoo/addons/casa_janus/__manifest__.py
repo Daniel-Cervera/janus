@@ -6,7 +6,7 @@
     'author': 'Casa Janus',
     'category': 'Website/eCommerce',
     'license': 'LGPL-3',
-    'depends': ['base', 'mail', 'website', 'website_sale', 'portal'],
+    'depends': ['base', 'mail', 'website', 'website_sale', 'portal', 'event', 'crm'],
     'data': [
         'security/ir.model.access.csv',
         'views/technique_views.xml', # <-- Action is defined here / La acción se define aquí

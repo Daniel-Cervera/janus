@@ -1,17 +1,13 @@
 /**
- * pages/galeria/index.tsx
+ * pages/galeria/index.tsx (v2)
  *
- * Página principal de la galería de Casa Janus.
- * Renderizada con ISR (Incremental Static Regeneration):
- * - getStaticProps genera el HTML estático con las primeras 24 obras
- * - Se regenera cada 10 minutos si hay cambios en Odoo
- * - El cliente carga obras adicionales vía IntersectionObserver
- *
- * URL patterns:
- * /galeria                          → todas las obras
- * /galeria?tecnica=oleo             → filtrado por técnica
- * /galeria?tecnica=oleo&col=sombras → filtrado por colección
- * /galeria?obra=vigilia-en-calma    → modal abierto (shallow)
+ * Mejoras sobre la versión anterior:
+ * - Botón flotante de selección múltiple con contador
+ * - Filtros de vista (grid / list) — pendiente implementar list view
+ * - Filtros de disponibilidad
+ * - Mejor UI en la barra de navegación
+ * - Título del Hero dinámico (Colección > Técnica)
+ * - Etiqueta superior del Hero estática ("CATÁLOGO" en rojo)
  */
 
 import { useState, useCallback, useEffect } from 'react'
@@ -21,9 +17,13 @@ import { useRouter } from 'next/router'
 
 import GalleryMural from '@/components/gallery/GalleryMural'
 import ArtworkModal from '@/components/modal/ArtworkModal'
+import SelectionDrawer from '@/components/selection/SelectionDrawer'
 import { useArtworkModal } from '@/hooks/useArtworkModal'
+import { useSelectionStore } from '@/store/selectionStore'
 import { getTechniques, getArtworks } from '@/lib/odoo-client'
-import type { Technique, Collection, CollectionSummary, ListResponse, Artwork } from '@/lib/types'
+import type {
+  Technique, CollectionSummary, ListResponse, Artwork,
+} from '@/lib/types'
 import styles from './Galeria.module.css'
 
 interface GaleriaPageProps {
@@ -31,31 +31,33 @@ interface GaleriaPageProps {
   initialArtworks: ListResponse<Artwork>
 }
 
-const GaleriaPage: NextPage<GaleriaPageProps> = ({
-  techniques,
-  initialArtworks,
-}) => {
+type AvailFilter = '' | 'available' | 'nfs'
+
+const GaleriaPage: NextPage<GaleriaPageProps> = ({ techniques, initialArtworks }) => {
   const router = useRouter()
 
-  // Leer filtros desde la query
   const activeTechSlug = (router.query.tecnica as string) || ''
   const activeColSlug = (router.query.col as string) || ''
+  const [availFilter, setAvailFilter] = useState<AvailFilter>('')
 
-  // Técnica activa
   const activeTechnique = techniques.find(t => t.slug === activeTechSlug) ?? null
   const collections: CollectionSummary[] = activeTechnique?.collections ?? []
 
-  // Estado de artworks para la página actual (se actualiza al cambiar filtros)
+  // Encontramos la colección activa para cambiar el título
+  const activeCollection = collections.find(c => c.slug === activeColSlug) ?? null
+
   const [currentArtworks, setCurrentArtworks] = useState(initialArtworks)
   const [isFiltering, setIsFiltering] = useState(false)
 
-  // ── Modal ────────────────────────────────────────────────────────────────
-  const {
-    isOpen, isLoading, artwork, error,
-    openModal, closeModal, navigateModal, currentIndex,
-  } = useArtworkModal(currentArtworks.data)
+  // Modal
+  const { isOpen, isLoading, artwork, error, openModal, closeModal, navigateModal, currentIndex }
+    = useArtworkModal(currentArtworks.data)
 
-  // ── Cambio de filtros: recarga obras del servidor ────────────────────────
+  // Selección
+  const selectionCount = useSelectionStore(s => s.totalItems())
+  const openSelection = useSelectionStore(s => s.openDrawer)
+
+  // Fetch filtrado
   useEffect(() => {
     if (!router.isReady) return
 
@@ -65,35 +67,32 @@ const GaleriaPage: NextPage<GaleriaPageProps> = ({
         const params = new URLSearchParams({ page: '1', per_page: '24' })
         if (activeTechSlug) params.set('technique', activeTechSlug)
         if (activeColSlug) params.set('collection', activeColSlug)
+        if (availFilter) params.set('availability', availFilter)
 
         const res = await fetch(`/api/gallery?${params}`)
-        if (!res.ok) throw new Error('Error al filtrar obras')
+        if (!res.ok) throw new Error('Error al filtrar')
         const data = await res.json()
         setCurrentArtworks(data.artworks)
       } catch (e) {
-        console.error('[galeria] filter fetch error', e)
+        console.error('[galeria] filter error', e)
       } finally {
         setIsFiltering(false)
       }
     }
 
-    // Solo hace fetch si hay filtros distintos a los iniciales
-    if (activeTechSlug || activeColSlug) {
+    if (activeTechSlug || activeColSlug || availFilter) {
       fetchFiltered()
     } else {
-      // ✅ Sincroniza correctamente con las obras iniciales
       setCurrentArtworks(initialArtworks)
     }
-  }, [activeTechSlug, activeColSlug, router.isReady, initialArtworks])
+  }, [activeTechSlug, activeColSlug, availFilter, router.isReady, initialArtworks])
 
-  // ── Navegar a técnica ────────────────────────────────────────────────────
   const selectTechnique = useCallback((slug: string) => {
     const query: Record<string, string> = {}
     if (slug) query.tecnica = slug
     router.push({ pathname: '/galeria', query }, undefined, { shallow: true, scroll: false })
   }, [router])
 
-  // ── Navegar a colección ──────────────────────────────────────────────────
   const selectCollection = useCallback((slug: string) => {
     const query: Record<string, string> = {}
     if (activeTechSlug) query.tecnica = activeTechSlug
@@ -101,39 +100,47 @@ const GaleriaPage: NextPage<GaleriaPageProps> = ({
     router.push({ pathname: '/galeria', query }, undefined, { shallow: true, scroll: false })
   }, [router, activeTechSlug])
 
-  // ── SEO ──────────────────────────────────────────────────────────────────
   const pageTitle = activeTechnique
-    ? `${activeTechnique.name} — Galería | Casa Janus`
-    : 'Galería | Casa Janus'
-  const pageDesc = activeTechnique
-    ? `Obras de ${activeTechnique.name} de Casa Janus. ${activeTechnique.description || ''}`
-    : 'Galería de arte de Casa Janus. Explora obras por técnica y colección.'
+    ? `${activeTechnique.name} — Galería | Janus`
+    : 'Galería | Janus'
+
+  // Determinamos el título del Hero: Prioridad Colección > Técnica > Galería
+  const heroTitle = activeCollection
+    ? activeCollection.name
+    : activeTechnique
+      ? activeTechnique.name
+      : 'Galería'
 
   return (
     <>
       <Head>
         <title>{pageTitle}</title>
-        <meta name="description" content={pageDesc} />
+        <meta
+          name="description"
+          content="Galería de arte de Janus. Explora obras por técnica y colección."
+        />
         <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDesc} />
         <meta property="og:type" content="website" />
       </Head>
 
       <div className={styles.page}>
-        {/* ── Hero strip ──────────────────────────────────────── */}
+
+        {/* ── Hero strip ────────────────────────────────── */}
         <header className={styles.hero}>
-          <p className={styles.heroLabel}>
-            {activeTechnique ? activeTechnique.name.toUpperCase() : 'COLECCIÓN'}
+          <p className={styles.heroLabel} style={{ color: '#E53E3E', fontWeight: 'bold' }}>
+            CATÁLOGO
           </p>
           <h1 className={styles.heroTitle}>
-            {activeTechnique
-              ? activeTechnique.name
-              : 'Casa Janus'}
+            {heroTitle}
           </h1>
+
+          {activeTechnique?.description && (
+            <p className={styles.heroDesc}>{activeTechnique.description}</p>
+          )}
         </header>
 
-        {/* ── Tabs de técnica ────────────────────────────────── */}
-        <nav className={styles.techniqueTabs} aria-label="Técnicas">
+        {/* ── Técnicas ─────────────────────────────────── */}
+        <nav className={styles.techniqueTabs} aria-label="Filtrar por técnica">
           <button
             className={`${styles.tab} ${!activeTechSlug ? styles.tabActive : ''}`}
             onClick={() => selectTechnique('')}
@@ -147,44 +154,92 @@ const GaleriaPage: NextPage<GaleriaPageProps> = ({
               onClick={() => selectTechnique(t.slug)}
             >
               {t.name}
-              <span className={styles.tabCount}>{t.artwork_count}</span>
+              {t.artwork_count > 0 && (
+                <span className={styles.tabCount}>{t.artwork_count}</span>
+              )}
             </button>
           ))}
         </nav>
 
-        {/* ── Filtro de colección ─────────────────────────────── */}
-        {collections.length > 0 && (
-          <div className={styles.collectionBar} role="group" aria-label="Colecciones">
-            <span className={styles.collectionBarLabel}>Colección:</span>
-            <button
-              className={`${styles.pill} ${!activeColSlug ? styles.pillActive : ''}`}
-              onClick={() => selectCollection('')}
+        {/* ── Barra secundaria: colecciones + filtros ───── */}
+        <div className={styles.secondaryBar}>
+          {/* Pills de colección */}
+          {collections.length > 0 && (
+            <div
+              className={styles.collectionBar}
+              role="group"
+              aria-label="Filtrar por colección"
             >
-              Todas
-            </button>
-            {collections.map((col: CollectionSummary) => (
+              <span className={styles.barLabel}>Colección:</span>
               <button
-                key={col.id}
-                className={`${styles.pill} ${activeColSlug === col.slug ? styles.pillActive : ''}`}
-                onClick={() => selectCollection(col.slug)}
+                className={`${styles.pill} ${!activeColSlug ? styles.pillActive : ''}`}
+                onClick={() => selectCollection('')}
               >
-                {col.name}
+                Todas
               </button>
-            ))}
-          </div>
-        )}
+              {collections.map((col: CollectionSummary) => (
+                <button
+                  key={col.id}
+                  className={`${styles.pill} ${activeColSlug === col.slug ? styles.pillActive : ''}`}
+                  onClick={() => selectCollection(col.slug)}
+                >
+                  {col.name}
+                  {col.artwork_count > 0 && (
+                    <span className={styles.pillCount}>{col.artwork_count}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
 
-        {/* ── Mural ───────────────────────────────────────────── */}
+          {/* Filtro de disponibilidad */}
+          <div className={styles.availBar} role="group" aria-label="Filtrar por disponibilidad">
+            {(['', 'available', 'nfs'] as AvailFilter[]).map(v => {
+              const labels: Record<string, string> = {
+                '': 'Todas', available: 'Disponibles', nfs: 'No en venta',
+              }
+              return (
+                <button
+                  key={v}
+                  className={`${styles.filterBtn} ${availFilter === v ? styles.filterBtnActive : ''}`}
+                  onClick={() => setAvailFilter(v)}
+                >
+                  {labels[v]}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ── Contador de resultados ─────────────────────── */}
+        <div className={styles.resultsBar}>
+          <span className={styles.resultsCount}>
+            {isFiltering ? '…' : currentArtworks.total} obras
+          </span>
+          {(activeTechSlug || activeColSlug || availFilter) && (
+            <button
+              className={styles.clearFilters}
+              onClick={() => {
+                setAvailFilter('')
+                router.push('/galeria', undefined, { shallow: true, scroll: false })
+              }}
+            >
+              Limpiar filtros ×
+            </button>
+          )}
+        </div>
+
+        {/* ── Mural ─────────────────────────────────────── */}
         <main>
           {isFiltering ? (
-            <div className={styles.filteringOverlay}>
-              <span className={styles.filteringDot} />
-              <span className={styles.filteringDot} style={{ animationDelay: '0.15s' }} />
-              <span className={styles.filteringDot} style={{ animationDelay: '0.30s' }} />
+            <div className={styles.filteringState}>
+              <span className={styles.dot} />
+              <span className={styles.dot} style={{ animationDelay: '0.15s' }} />
+              <span className={styles.dot} style={{ animationDelay: '0.30s' }} />
             </div>
           ) : (
             <GalleryMural
-              key={`${activeTechSlug}-${activeColSlug}`}
+              key={`${activeTechSlug}-${activeColSlug}-${availFilter}`}
               initialData={currentArtworks}
               techniqueSlug={activeTechSlug}
               collectionSlug={activeColSlug}
@@ -194,7 +249,25 @@ const GaleriaPage: NextPage<GaleriaPageProps> = ({
         </main>
       </div>
 
-      {/* ── Modal (fuera del layout) ─────────────────────────── */}
+      {/* ── FAB de selección ──────────────────────────── */}
+      {selectionCount > 0 && (
+        <button
+          className={styles.selectionFab}
+          onClick={openSelection}
+          aria-label={`Ver selección (${selectionCount} obras)`}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <path
+              d="M9 15.5S2 11 2 6.5C2 4.3 3.8 2.5 6 2.5c1.3 0 2.5.7 3 1.8.5-1.1 1.7-1.8 3-1.8C14.2 2.5 16 4.3 16 6.5c0 4.5-7 9-7 9Z"
+              fill="currentColor"
+            />
+          </svg>
+          <span className={styles.fabCount}>{selectionCount}</span>
+          <span className={styles.fabLabel}>Mi selección</span>
+        </button>
+      )}
+
+      {/* ── Modal ─────────────────────────────────────── */}
       <ArtworkModal
         isOpen={isOpen}
         isLoading={isLoading}
@@ -205,24 +278,29 @@ const GaleriaPage: NextPage<GaleriaPageProps> = ({
         onClose={closeModal}
         onNavigate={navigateModal}
       />
+
+      {/* ── Selection drawer ──────────────────────────── */}
+      <SelectionDrawer />
     </>
   )
 }
 
 export default GaleriaPage
 
-// ── ISR: genera el HTML estático, revalida cada 10 minutos ───────────────────
 export const getStaticProps: GetStaticProps<GaleriaPageProps> = async () => {
-  const [techniques, initialArtworks] = await Promise.all([
-    getTechniques(true),   // con colecciones anidadas para los filtros
-    getArtworks({ page: 1, perPage: 24, order: 'year_desc' }),
-  ])
-
-  return {
-    props: {
-      techniques,
-      initialArtworks,
-    },
-    revalidate: 600,   // ISR: 10 minutos
+  try {
+    const [techniques, initialArtworks] = await Promise.all([
+      getTechniques(true),
+      getArtworks({ page: 1, perPage: 24, order: 'year_desc' }),
+    ])
+    return { props: { techniques, initialArtworks }, revalidate: 600 }
+  } catch {
+    return {
+      props: {
+        techniques: [],
+        initialArtworks: { data: [], total: 0, page: 1, per_page: 24, pages: 0 },
+      },
+      revalidate: 60,
+    }
   }
 }

@@ -8,12 +8,26 @@ interface ArtistaProps {
     artist: Artist | null
 }
 
+// 🔥 FUNCIÓN INFALIBLE: Limpia recursivamente todo el objeto de Odoo
+// Convierte cualquier 'undefined' oculto en 'null' para que Next.js no explote.
+function sanitizeForNextJs(obj: any): any {
+    if (obj === null || typeof obj !== 'object') return obj ?? null;
+    if (Array.isArray(obj)) return obj.map(sanitizeForNextJs);
+
+    const newObj: any = {};
+    for (const key in obj) {
+        newObj[key] = obj[key] === undefined ? null : sanitizeForNextJs(obj[key]);
+    }
+    return newObj;
+}
+
 export default function ArtistaPage({ artist }: ArtistaProps) {
+    // Manejo de estado nulo (Error de conexión o datos vacíos)
     if (!artist) {
         return (
             <main className={styles.page}>
                 <div className={styles.container}>
-                    <p className={styles.empty}>Perfil del artista no disponible.</p>
+                    <p className={styles.empty}>Perfil del artista no disponible en este momento.</p>
                 </div>
             </main>
         )
@@ -22,8 +36,8 @@ export default function ArtistaPage({ artist }: ArtistaProps) {
     return (
         <>
             <Head>
-                <title>Artista — {artist.name} — Janus</title>
-                <meta name="description" content={artist.artist_statement?.slice(0, 160)} />
+                <title>Artista — {artist.name || 'Sin nombre'} — Janus</title>
+                <meta name="description" content={artist.artist_statement?.slice(0, 160) || ''} />
             </Head>
 
             <main className={styles.page}>
@@ -39,40 +53,15 @@ export default function ArtistaPage({ artist }: ArtistaProps) {
 
                 <div className={styles.container}>
                     <div className={styles.grid}>
-                        {/* Texto de la biografía */}
-                        <div className={styles.bio}>
-                            <h2 className={styles.sectionLabel}>Biografía</h2>
-                            {artist.biography ? (
-                                <div
-                                    className={styles.bioText}
-                                    dangerouslySetInnerHTML={{ __html: artist.biography }}
-                                />
-                            ) : (
-                                <p className={styles.bioText}>Biografía no disponible.</p>
-                            )}
-
-                            {/* CV / Hitos */}
-                            {artist.cv_items && artist.cv_items.length > 0 && (
-                                <div className={styles.cv}>
-                                    <h2 className={styles.sectionLabel}>Trayectoria</h2>
-                                    <ul className={styles.cvList}>
-                                        {artist.cv_items.map((item, i) => (
-                                            <li key={i} className={styles.cvItem}>
-                                                <span className={styles.cvYear}>{item.year}</span>
-                                                <div>
-                                                    <p className={styles.cvDesc}>{item.description}</p>
-                                                    {item.location && (
-                                                        <p className={styles.cvLoc}>{item.location}</p>
-                                                    )}
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
+                        {/* Texto de la biografía renderizado de forma segura */}
+                        <div className={styles.bioCol}>
+                            <div
+                                className={styles.bioText}
+                                dangerouslySetInnerHTML={{ __html: artist.biography_html || artist.biography || '' }}
+                            />
                         </div>
 
-                        {/* Foto del artista */}
+                        {/* Fotografía del artista */}
                         <div className={styles.photoCol}>
                             <div className={styles.photoWrap}>
                                 {artist.photo_url ? (
@@ -84,12 +73,12 @@ export default function ArtistaPage({ artist }: ArtistaProps) {
                                     />
                                 ) : (
                                     <div className={styles.photoPlaceholder}>
-                                        <span>Fotografía del artista</span>
+                                        <span>Fotografía no disponible</span>
                                     </div>
                                 )}
                                 <div className={styles.photoCaption}>
                                     <p className={styles.captionName}>{artist.name}</p>
-                                    <p className={styles.captionSub}>Artista visual · Mexicano · 1990</p>
+                                    <p className={styles.captionSub}>Artista visual · Mexicano</p>
                                 </div>
                             </div>
                         </div>
@@ -103,8 +92,37 @@ export default function ArtistaPage({ artist }: ArtistaProps) {
 export const getStaticProps: GetStaticProps<ArtistaProps> = async () => {
     try {
         const artist = await getArtist()
-        return { props: { artist }, revalidate: 3600 }
-    } catch {
-        return { props: { artist: null }, revalidate: 60 }
+
+        if (!artist) {
+            return { props: { artist: null }, revalidate: 60 }
+        }
+
+        // 1. Mapeo seguro base (Forzamos valores por defecto como '0' en los años)
+        const safeArtist = {
+            ...artist,
+            cv_items: Array.isArray(artist.cv_items)
+                ? artist.cv_items.map((item: any) => ({
+                    ...item,
+                    year: item.year || 0,
+                    category: item.category || 'other',
+                    description: item.description || '',
+                    location: item.location || ''
+                }))
+                : []
+        }
+
+        // 2. Pasamos el objeto por la limpieza profunda recursiva
+        const cleanArtist = sanitizeForNextJs(safeArtist)
+
+        return {
+            props: { artist: cleanArtist },
+            revalidate: 3600
+        }
+    } catch (error) {
+        console.error("Error fetching artist from Odoo:", error)
+        return {
+            props: { artist: null },
+            revalidate: 10
+        }
     }
 }

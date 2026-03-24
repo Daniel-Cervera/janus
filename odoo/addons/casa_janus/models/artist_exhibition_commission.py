@@ -1,122 +1,204 @@
 # -*- coding: utf-8 -*-
-# TODO: copiar el contenido desde el chat de Claude
-# -*- coding: utf-8 -*-
 from odoo import models, fields, api
+from odoo.exceptions import ValidationError
+import datetime
 
+# ── Artista ───────────────────────────────────────────────────────────────────
+
+ARTIST_ROLES = [
+    ('main',        'Artista principal'),
+    ('guest',       'Artista invitado'),
+    ('collaborator','Colaborador'),
+]
 
 class CasaJanusArtist(models.Model):
-    """
-    Perfil del artista. Solo existe un registro (singleton).
-    Gestionable desde el panel de Odoo.
-    """
-    _name = 'casa_janus.artist'
+    _name        = 'casa_janus.artist'
     _description = 'Artista'
+    _order       = 'is_main_artist desc, name'
 
-    name = fields.Char(string='Nombre completo', required=True)
-    biography = fields.Html(
-        string='Biografía',
-        help='Texto enriquecido. Se renderiza en la página /artista.',
+    name = fields.Char(string='Nombre artístico / completo', required=True)
+    slug = fields.Char(string='Slug URL', help='Para la ruta /artista/[slug]. Solo para el artista principal.')
+    role = fields.Selection(selection=ARTIST_ROLES, string='Rol', default='guest', required=True)
+    is_main_artist = fields.Boolean(
+        string='Artista principal',
+        default=False,
+        help='Solo puede haber un artista principal en el sistema. (Dueño de la galería).',
     )
-    artist_statement = fields.Text(
-        string='Statement del artista',
-        help='Declaración artística breve. Aparece destacada en la página del artista.',
+    photo_cf_image_id = fields.Char(string='Cloudflare Image ID (foto)')
+    artist_statement = fields.Text(string='Statement artístico')
+    biography = fields.Html(string='Biografía', sanitize=True)
+    nationality = fields.Char(string='Nacionalidad')
+    birth_year  = fields.Integer(string='Año de nacimiento')
+    website     = fields.Char(string='Sitio web personal')
+    instagram   = fields.Char(string='Instagram (@handle)')
+    email       = fields.Char(string='Email de contacto')
+
+    cv_item_ids = fields.One2many('casa_janus.artist.cv_item', 'artist_id', string='Trayectoria / CV')
+    
+    # NUEVO: Relación con las obras creadas por este artista
+    artwork_ids = fields.One2many('casa_janus.artwork', 'artist_id', string='Obras')
+
+    exhibition_ids = fields.Many2many(
+        comodel_name='casa_janus.exhibition',
+        relation='casa_janus_exhibition_artist_rel',
+        column1='artist_id',
+        column2='exhibition_id',
+        string='Exposiciones',
+        readonly=True,
     )
-    photo_cf_image_id = fields.Char(
-        string='Cloudflare Image ID (foto)',
-    )
-    # CV / Highlights
-    cv_item_ids = fields.One2many(
-        comodel_name='casa_janus.artist.cv_item',
-        inverse_name='artist_id',
-        string='Hitos del CV',
-    )
+    exhibition_count = fields.Integer(string='Exposiciones', compute='_compute_exhibition_count')
+
+    @api.depends('exhibition_ids')
+    def _compute_exhibition_count(self):
+        for rec in self:
+            rec.exhibition_count = len(rec.exhibition_ids)
+
+    @api.constrains('is_main_artist')
+    def _check_single_main_artist(self):
+        """Garantiza que solo haya un artista principal."""
+        for rec in self:
+            if rec.is_main_artist:
+                others = self.search([('is_main_artist', '=', True), ('id', '!=', rec.id)])
+                if others:
+                    raise ValidationError(
+                        f'Ya existe un artista principal: "{others[0].name}". '
+                        'Desmarca ese registro antes de asignar otro.'
+                    )
 
     def _build_cf_url(self, cf_id, variant='public'):
         if not cf_id:
             return None
-        base = self.env['ir.config_parameter'].sudo().get_param(
-            'casa_janus.cloudflare_images_base_url', ''
-        )
+        base = self.env['ir.config_parameter'].sudo().get_param('casa_janus.cloudflare_images_base_url', '')
         return f'{base.rstrip("/")}/{cf_id}/{variant}' if base else None
 
     def api_dict(self):
         return {
-            'name': self.name,
-            'biography': self.biography or '',
+            'id':               self.id,
+            'name':             self.name,
+            'slug':             self.slug or '',
+            'role':             self.role,
+            'is_main_artist':   self.is_main_artist,
+            'nationality':      self.nationality or '',
+            'birth_year':       self.birth_year,
+            'website':          self.website or '',
+            'instagram':        self.instagram or '',
             'artist_statement': self.artist_statement or '',
-            'photo': {
-                'cf_id': self.photo_cf_image_id or '',
-                'url': self._build_cf_url(self.photo_cf_image_id),
-                'url_medium': self._build_cf_url(self.photo_cf_image_id, 'medium'),
-            },
-            'cv': [item.api_dict() for item in self.cv_item_ids],
+            'biography':        self.biography or '',
+            'photo_url':        self._build_cf_url(self.photo_cf_image_id, 'medium'),
+            'photo_cf_id':      self.photo_cf_image_id or '',
+            'cv_items':         [item.api_dict() for item in self.cv_item_ids],
+            'exhibition_count': self.exhibition_count,
+            'artwork_ids':      self.artwork_ids.ids,
         }
 
+# ── CV Item ───────────────────────────────────────────────────────────────────
+CV_CATEGORIES = [
+    ('exhibition', 'Exposición'),
+    ('award',      'Premio / Reconocimiento'),
+    ('residency',  'Residencia artística'),
+    ('education',  'Formación'),
+    ('publication','Publicación'),
+    ('other',      'Otro'),
+]
 
 class CasaJanusArtistCVItem(models.Model):
-    """Línea del CV del artista (exposición, premio, residencia, publicación...)."""
-    _name = 'casa_janus.artist.cv_item'
-    _description = 'Ítem CV Artista'
-    _order = 'year desc, sequence'
+    _name        = 'casa_janus.artist.cv_item'
+    _description = 'Línea de CV del artista'
+    _order       = 'year desc, sequence'
 
-    artist_id = fields.Many2one('casa_janus.artist', ondelete='cascade')
-    year = fields.Integer(string='Año', required=True)
-    category = fields.Selection([
-        ('solo',        'Exposición individual'),
-        ('group',       'Exposición colectiva'),
-        ('award',       'Premio / Reconocimiento'),
-        ('residency',   'Residencia artística'),
-        ('publication', 'Publicación'),
-        ('other',       'Otro'),
-    ], string='Categoría', required=True)
+    artist_id   = fields.Many2one('casa_janus.artist', required=True, ondelete='cascade', index=True)
+    year        = fields.Integer(string='Año', required=True)
+    category    = fields.Selection(CV_CATEGORIES, string='Categoría', default='exhibition')
     description = fields.Char(string='Descripción', required=True)
-    location = fields.Char(string='Lugar / Institución')
-    sequence = fields.Integer(default=10)
+    location    = fields.Char(string='Lugar / Ciudad')
+    sequence    = fields.Integer(default=10)
 
     def api_dict(self):
         return {
-            'year': self.year,
-            'category': self.category,
+            'year':        self.year,
+            'category':    self.category,
             'description': self.description,
-            'location': self.location or '',
+            'location':    self.location or '',
         }
 
+# ── Print Product ─────────────────────────────────────────────────────────────
+class CasaJanusPrintProduct(models.Model):
+    _name        = 'casa_janus.print_product'
+    _description = 'Reproducción / Print de una obra'
+    _order       = 'sequence'
 
+    artwork_id    = fields.Many2one('casa_janus.artwork', required=True, ondelete='cascade', index=True)
+    size_label    = fields.Char(string='Tamaño')
+    paper_type    = fields.Char(string='Papel / Material')
+    price         = fields.Float(string='Precio', digits=(10, 2))
+    currency_id   = fields.Many2one('res.currency', default=lambda s: s.env.ref('base.USD').id)
+    stock_qty     = fields.Integer(string='Stock', default=0)
+    product_tmpl_id = fields.Many2one('product.template', string='Producto Odoo', ondelete='set null')
+    sequence      = fields.Integer(default=10)
+
+    def api_dict(self):
+        return {
+            'id':         self.id,
+            'size_label': self.size_label or '',
+            'paper_label': self.paper_type or '',
+            'price':      self.price,
+            'currency':   self.currency_id.name if self.currency_id else 'USD',
+            'in_stock':   self.stock_qty > 0,
+            'stock_qty':  self.stock_qty,
+            'product_id': self.product_tmpl_id.id if self.product_tmpl_id else None,
+        }
+
+# ── Exposición ────────────────────────────────────────────────────────────────
 class CasaJanusExhibition(models.Model):
-    """
-    Exposición / evento de la galería.
-    Aparece en la sección Blog/Noticias del sitio.
-    Puede vincular obras participantes.
-    """
-    _name = 'casa_janus.exhibition'
+    _name        = 'casa_janus.exhibition'
     _description = 'Exposición'
-    _order = 'date_start desc'
-    _inherit = ['mail.thread']
+    _order       = 'date_start desc'
+    _inherit     = ['mail.thread']
 
-    name = fields.Char(string='Título', required=True)
-    slug = fields.Char(string='Slug URL', required=True, index=True)
-    date_start = fields.Date(string='Fecha de inicio', required=True)
-    date_end = fields.Date(string='Fecha de fin')
-    location = fields.Char(string='Lugar')
-    description = fields.Html(string='Descripción')
-    cover_cf_image_id = fields.Char(string='Cloudflare Image ID (portada)')
-    artwork_ids = fields.Many2many(
-        comodel_name='casa_janus.artwork',
-        relation='casa_janus_exhibition_artwork_rel',
-        column1='exhibition_id',
-        column2='artwork_id',
-        string='Obras en exposición',
+    name = fields.Char(string='Título', required=True, tracking=True)
+    slug = fields.Char(string='Slug URL', index=True)
+
+    main_artist_id = fields.Many2one(
+        comodel_name='casa_janus.artist',
+        string='Artista principal',
+        domain=[('role', '=', 'main')],
+        default=lambda self: self._default_main_artist(),
     )
-    state = fields.Selection([
-        ('upcoming', 'Próximamente'),
-        ('active',   'En curso'),
-        ('past',     'Finalizada'),
-    ], string='Estado', compute='_compute_state', store=True)
-    active = fields.Boolean(default=True)
+    guest_artist_ids = fields.Many2many(
+        comodel_name='casa_janus.artist',
+        relation='casa_janus_exhibition_artist_rel',
+        column1='exhibition_id',
+        column2='artist_id',
+        string='Artistas invitados',
+        domain=[('role', 'in', ('guest', 'collaborator'))],
+    )
+    exhibition_artist_ids = fields.One2many(
+        comodel_name='casa_janus.exhibition.artist',
+        inverse_name='exhibition_id',
+        string='Artistas con roles específicos',
+    )
 
-    _sql_constraints = [
-        ('slug_unique', 'UNIQUE(slug)', 'El slug de exposición debe ser único.'),
-    ]
+    date_start = fields.Date(string='Fecha de inicio', tracking=True)
+    date_end   = fields.Date(string='Fecha de fin',   tracking=True)
+    location   = fields.Char(string='Lugar / Galería')
+    city       = fields.Char(string='Ciudad')
+
+    state = fields.Selection(
+        selection=[('upcoming', 'Próxima'), ('active', 'En curso'), ('past', 'Pasada')],
+        string='Estado',
+        compute='_compute_state',
+        store=True,
+    )
+
+    description     = fields.Html(string='Descripción', sanitize=True)
+    cover_cf_image_id = fields.Char(string='Cloudflare Image ID (portada)')
+    active          = fields.Boolean(default=True)
+    artwork_ids     = fields.Many2many('casa_janus.artwork', string='Obras en exposición')
+    website_event_id = fields.Many2one('event.event', string='Evento del sitio web', ondelete='set null')
+
+    @api.model
+    def _default_main_artist(self):
+        return self.env['casa_janus.artist'].search([('is_main_artist', '=', True)], limit=1)
 
     @api.depends('date_start', 'date_end')
     def _compute_state(self):
@@ -132,126 +214,116 @@ class CasaJanusExhibition(models.Model):
                 rec.state = 'active'
 
     def _build_cf_url(self, cf_id, variant='public'):
-        if not cf_id:
-            return None
-        base = self.env['ir.config_parameter'].sudo().get_param(
-            'casa_janus.cloudflare_images_base_url', ''
-        )
+        if not cf_id: return None
+        base = self.env['ir.config_parameter'].sudo().get_param('casa_janus.cloudflare_images_base_url', '')
         return f'{base.rstrip("/")}/{cf_id}/{variant}' if base else None
 
-    def api_dict(self, include_artworks=False):
-        result = {
-            'id': self.id,
-            'name': self.name,
-            'slug': self.slug,
-            'date_start': self.date_start.isoformat() if self.date_start else None,
-            'date_end': self.date_end.isoformat() if self.date_end else None,
-            'location': self.location or '',
+    def api_dict(self):
+        guest_artists = []
+        for ea in self.exhibition_artist_ids:
+            guest_artists.append({
+                'id':        ea.artist_id.id,
+                'name':      ea.artist_id.name,
+                'role_label': ea.role_label,
+                'instagram': ea.artist_id.instagram or '',
+                'photo_url': ea.artist_id._build_cf_url(ea.artist_id.photo_cf_image_id, 'thumb'),
+            })
+
+        return {
+            'id':          self.id,
+            'name':        self.name,
+            'slug':        self.slug or '',
+            'state':       self.state,
+            'date_start':  str(self.date_start) if self.date_start else None,
+            'date_end':    str(self.date_end)   if self.date_end   else None,
+            'location':    self.location or '',
+            'city':        self.city or '',
             'description': self.description or '',
-            'cover_image': self._build_cf_url(self.cover_cf_image_id),
-            'state': self.state,
+            'cover_image': self._build_cf_url(self.cover_cf_image_id, 'large'),
+            'main_artist': {
+                'id':   self.main_artist_id.id,
+                'name': self.main_artist_id.name,
+            } if self.main_artist_id else None,
+            'guest_artists': guest_artists,
             'artwork_count': len(self.artwork_ids),
         }
-        if include_artworks:
-            result['artworks'] = [a.api_dict() for a in self.artwork_ids]
-        return result
 
+# ── Artista por Exposición ────────────────────────────────────────────────────
+EXHIBITION_ARTIST_ROLES = [
+    ('featured',   'Artista destacado'),
+    ('guest',      'Artista invitado'),
+    ('collaborator','Colaborador'),
+    ('curator',    'Curador'),
+]
 
-class CasaJanusPrintProduct(models.Model):
-    """
-    Reproducción / print de una obra.
-    Vincula con product.template de Odoo para e-commerce.
-    """
-    _name = 'casa_janus.print_product'
-    _description = 'Print / Reproducción'
-    _order = 'sequence'
+class CasaJanusExhibitionArtist(models.Model):
+    _name        = 'casa_janus.exhibition.artist'
+    _description = 'Artista por Exposición'
+    _order       = 'sequence'
 
-    artwork_id = fields.Many2one(
-        comodel_name='casa_janus.artwork',
-        string='Obra original',
-        required=True,
-        ondelete='cascade',
-        index=True,
-    )
-    product_tmpl_id = fields.Many2one(
-        comodel_name='product.template',
-        string='Producto Odoo',
-        ondelete='set null',
-        help='Producto de e-commerce de Odoo para gestionar stock y carrito.',
-    )
-    size_label = fields.Char(
-        string='Tamaño',
-        required=True,
-        help='Ej: "A4 (21×30 cm)", "50×70 cm", "70×100 cm"',
-    )
-    paper_type = fields.Selection([
-        ('fine_art',     'Fine Art (algodón 310g)'),
-        ('photo_gloss',  'Fotográfico brillo'),
-        ('photo_matte',  'Fotográfico mate'),
-        ('canvas',       'Lienzo (canvas)'),
-    ], string='Tipo de papel/soporte', required=True)
-    price = fields.Float(string='Precio', digits=(10, 2), required=True)
-    stock_qty = fields.Integer(string='Stock disponible', default=0)
+    exhibition_id = fields.Many2one('casa_janus.exhibition', string='Exposición', required=True, ondelete='cascade', index=True)
+    artist_id = fields.Many2one('casa_janus.artist', string='Artista', required=True, domain=[('role', 'in', ('guest', 'collaborator'))], ondelete='cascade')
+    role_label = fields.Selection(selection=EXHIBITION_ARTIST_ROLES, string='Rol en esta exposición', default='guest', required=True)
+    bio_override = fields.Text(string='Bio específica para esta exposición')
     sequence = fields.Integer(default=10)
 
-    def api_dict(self):
-        return {
-            'id': self.id,
-            'size_label': self.size_label,
-            'paper_type': self.paper_type,
-            'paper_label': dict(self._fields['paper_type'].selection).get(self.paper_type, ''),
-            'price': self.price,
-            'currency': self.artwork_id.currency_id.name if self.artwork_id.currency_id else 'USD',
-            'stock_qty': self.stock_qty,
-            'in_stock': self.stock_qty > 0,
-            'product_id': self.product_tmpl_id.id if self.product_tmpl_id else None,
-        }
+    _sql_constraints = [('artist_exhibition_unique', 'UNIQUE(exhibition_id, artist_id)', 'El artista ya está registrado en esta exposición.')]
 
+# ── Encargo personalizado ─────────────────────────────────────────────────────
+COMMISSION_STATES = [
+    ('new',     'Nuevo'),
+    ('review',  'En revisión'),
+    ('quoted',  'Presupuestado'),
+    ('accept',  'Aceptado'),
+    ('decline', 'Rechazado'),
+]
+BUDGET_RANGES = [
+    ('lt500',    'Menos de $500'),
+    ('500_1500', '$500 – $1,500'),
+    ('1500_5k',  '$1,500 – $5,000'),
+    ('5k_15k',   '$5,000 – $15,000'),
+    ('gt15k',    'Más de $15,000'),
+]
 
-class CasaJanusCommissionRequest(models.Model):
-    """
-    Encargo personalizado enviado desde el formulario del sitio.
-    Se gestiona como un lead/solicitud desde el panel de Odoo.
-    """
-    _name = 'casa_janus.commission'
-    _description = 'Encargo Personalizado'
-    _order = 'create_date desc'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+class CasaJanusCommission(models.Model):
+    _name        = 'casa_janus.commission'
+    _description = 'Encargo personalizado'
+    _order       = 'create_date desc'
+    _inherit     = ['mail.thread', 'mail.activity.mixin']
 
-    partner_name = fields.Char(string='Nombre', required=True)
-    email = fields.Char(string='Email', required=True)
-    phone = fields.Char(string='Teléfono')
-    description = fields.Text(
-        string='Descripción del encargo',
-        required=True,
-        help='Qué desea el cliente: tamaño, temática, uso previsto, etc.',
-    )
-    budget_range = fields.Selection([
-        ('lt500',    'Menos de $500'),
-        ('500_1500', '$500 – $1,500'),
-        ('1500_5k',  '$1,500 – $5,000'),
-        ('5k_15k',   '$5,000 – $15,000'),
-        ('gt15k',    'Más de $15,000'),
-    ], string='Presupuesto estimado')
-    technique_id = fields.Many2one(
-        comodel_name='casa_janus.technique',
-        string='Técnica preferida',
-        ondelete='set null',
-    )
-    ref_artwork_id = fields.Many2one(
-        comodel_name='casa_janus.artwork',
-        string='Obra de referencia (opcional)',
-        ondelete='set null',
-    )
-    state = fields.Selection([
-        ('new',     'Nueva solicitud'),
-        ('review',  'En revisión'),
-        ('quoted',  'Presupuesto enviado'),
-        ('accept',  'Aceptada'),
-        ('decline', 'Declinada'),
-    ], string='Estado', default='new', tracking=True)
-    notes = fields.Text(
-        string='Notas internas',
-        help='Notas privadas del artista. No visibles para el cliente.',
-    )
-    create_date = fields.Datetime(string='Fecha de solicitud', readonly=True)
+    partner_name = fields.Char(string='Nombre del cliente', required=True, tracking=True)
+    email        = fields.Char(string='Email', required=True)
+    phone        = fields.Char(string='Teléfono')
+    description  = fields.Text(string='Descripción del encargo', required=True)
+    budget_range = fields.Selection(BUDGET_RANGES, string='Presupuesto estimado')
+    technique_id = fields.Many2one('casa_janus.technique', string='Técnica preferida', ondelete='set null')
+    ref_artwork_id = fields.Many2one('casa_janus.artwork', string='Obra de referencia', ondelete='set null')
+    selected_artwork_ids = fields.Many2many('casa_janus.artwork', string='Obras de interés')
+    state = fields.Selection(COMMISSION_STATES, string='Estado', default='new', tracking=True)
+    notes = fields.Text(string='Notas internas')
+    crm_lead_id = fields.Many2one('crm.lead', string='Oportunidad CRM', ondelete='set null')
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        for rec in records:
+            rec._create_crm_lead()
+        return records
+
+    def _create_crm_lead(self):
+        if not self.env['ir.model'].sudo().search([('model', '=', 'crm.lead')], limit=1):
+            return
+
+        artworks_text = ''
+        if self.selected_artwork_ids:
+            artworks_text = '\n\nObras de interés:\n' + '\n'.join(f'- {a.name} ({a.year})' for a in self.selected_artwork_ids)
+
+        lead = self.env['crm.lead'].sudo().create({
+            'name':         f'Encargo web: {self.partner_name}',
+            'contact_name': self.partner_name,
+            'email_from':   self.email,
+            'phone':        self.phone or False,
+            'description':  (self.description or '') + artworks_text,
+            'type':         'lead',
+        })
+        self.crm_lead_id = lead.id

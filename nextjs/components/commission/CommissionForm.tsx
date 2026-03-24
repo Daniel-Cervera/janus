@@ -36,17 +36,17 @@ interface FormState {
 }
 
 const BUDGET_OPTIONS: { value: BudgetRange; label: string }[] = [
-  { value: 'lt500',    label: 'Menos de $500' },
+  { value: 'lt500', label: 'Menos de $500' },
   { value: '500_1500', label: '$500 – $1,500' },
-  { value: '1500_5k',  label: '$1,500 – $5,000' },
-  { value: '5k_15k',   label: '$5,000 – $15,000' },
-  { value: 'gt15k',    label: 'Más de $15,000' },
+  { value: '1500_5k', label: '$1,500 – $5,000' },
+  { value: '5k_15k', label: '$5,000 – $15,000' },
+  { value: 'gt15k', label: 'Más de $15,000' },
 ]
 
 type SubmitStatus = 'idle' | 'submitting' | 'success' | 'error'
 
 export default function CommissionForm({
-  techniques,
+  techniques = [],
   refArtworkId,
   refArtworkName,
 }: CommissionFormProps) {
@@ -100,15 +100,15 @@ export default function CommissionForm({
     try {
       const payload: Record<string, unknown> = {
         partner_name: form.partner_name.trim(),
-        email:        form.email.trim().toLowerCase(),
-        description:  form.description.trim(),
-        website:      form.website,  // honeypot
+        email: form.email.trim().toLowerCase(),
+        description: form.description.trim(),
+        website: form.website,  // honeypot
       }
 
-      if (form.phone.trim())       payload.phone        = form.phone.trim()
-      if (form.budget_range)       payload.budget_range = form.budget_range
-      if (form.technique_id)       payload.technique_id = parseInt(form.technique_id)
-      if (refArtworkId)            payload.ref_artwork_id = refArtworkId
+      if (form.phone.trim()) payload.phone = form.phone.trim()
+      if (form.budget_range) payload.budget_range = form.budget_range
+      if (form.technique_id) payload.technique_id = parseInt(form.technique_id)
+      if (refArtworkId) payload.ref_artwork_id = refArtworkId
 
       const res = await fetch('/api/commission', {
         method: 'POST',
@@ -240,7 +240,7 @@ export default function CommissionForm({
             onChange={set('technique_id')}
           >
             <option value="">Sin preferencia</option>
-            {techniques.map(t => (
+            {(techniques ?? []).map(t => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>

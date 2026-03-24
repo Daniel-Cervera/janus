@@ -1,77 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <record id="view_artist_list" model="ir.ui.view">
+        <field name="name">casa_janus.artist.list</field>
+        <field name="model">casa_janus.artist</field>
+        <field name="arch" type="xml">
+            <tree string="Artistas" decoration-primary="is_main_artist == True" decoration-muted="role == 'collaborator'">
+                <field name="name"/>
+                <field name="role" widget="badge" decoration-success="role == 'main'" decoration-info="role == 'guest'" decoration-muted="role == 'collaborator'"/>
+                <field name="is_main_artist" widget="boolean_toggle" string="Principal"/>
+                <field name="nationality"/>
+                <field name="instagram"/>
+                <field name="exhibition_count" string="Exposiciones"/>
+            </tree>
+        </field>
+    </record>
+
     <record id="view_artist_form" model="ir.ui.view">
         <field name="name">casa_janus.artist.form</field>
         <field name="model">casa_janus.artist</field>
         <field name="arch" type="xml">
-            <form string="Perfil del Artista">
+            <form string="Artista">
                 <sheet>
+                    <widget name="web_ribbon" title="Artista Principal" bg_color="bg-success" invisible="not is_main_artist"/>
+
                     <div class="oe_title">
-                        <label for="name" string="Nombre del artista"/>
+                        <label for="name" string="Nombre artístico"/>
                         <h1>
-                            <field name="name" placeholder="Nombre completo"/>
+                            <field name="name" placeholder="Nombre completo / artístico"/>
                         </h1>
                     </div>
+
                     <group>
-                        <field name="photo_cf_image_id" string="Cloudflare Image ID (foto)" placeholder="uuid de Cloudflare Images"/>
+                        <group string="Identificación">
+                            <field name="role"/>
+                            <field name="is_main_artist" string="Artista principal del espacio" widget="boolean_toggle"/>
+                            <field name="slug" placeholder="israel-cortes-janus" invisible="not is_main_artist"/>
+                            <field name="nationality"/>
+                            <field name="birth_year"/>
+                        </group>
+                        <group string="Contacto y redes">
+                            <field name="email"/>
+                            <field name="instagram" placeholder="@janus_cp"/>
+                            <field name="website" placeholder="https://..."/>
+                            <field name="photo_cf_image_id" string="Cloudflare Image ID (foto)" placeholder="uuid de Cloudflare Images"/>
+                        </group>
                     </group>
-                    <group string="Statement del artista">
-                        <field name="artist_statement" nolabel="1" placeholder="Declaración artística breve (aparece destacada en la página /artista)..."/>
+
+                    <group string="Statement artístico">
+                        <field name="artist_statement" nolabel="1" placeholder="Declaración artística breve (max 400 chars)..."/>
                     </group>
+
                     <group string="Biografía">
                         <field name="biography" nolabel="1" widget="html"/>
                     </group>
+
                     <notebook>
-                        <page string="CV / Hitos" name="cv">
+                        <page string="Trayectoria / CV" name="cv">
                             <field name="cv_item_ids">
                                 <tree editable="bottom">
                                     <field name="year"/>
                                     <field name="category"/>
-                                    <field name="description" placeholder="Ej: Exposición individual en Galería X"/>
-                                    <field name="location" placeholder="Ej: Ciudad de México"/>
+                                    <field name="description" placeholder="Ej: Exposición individual — Galería X"/>
+                                    <field name="location" placeholder="Ciudad, País"/>
                                     <field name="sequence" widget="handle"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Exposiciones" name="exhibitions">
+                            <field name="exhibition_ids" readonly="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="date_start"/>
+                                    <field name="date_end"/>
+                                    <field name="location"/>
+                                    <field name="state" widget="badge" decoration-success="state == 'active'" decoration-info="state == 'upcoming'" decoration-muted="state == 'past'"/>
                                 </tree>
                             </field>
                         </page>
                     </notebook>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
 
-    <record id="view_artist_tree" model="ir.ui.view">
-        <field name="name">casa_janus.artist.tree</field>
+    <record id="view_artist_search" model="ir.ui.view">
+        <field name="name">casa_janus.artist.search</field>
         <field name="model">casa_janus.artist</field>
         <field name="arch" type="xml">
-            <tree string="Artistas">
+            <search string="Buscar artistas">
                 <field name="name"/>
-            </tree>
+                <filter name="main" string="Principal" domain="[('role','=','main')]"/>
+                <filter name="guests" string="Invitados" domain="[('role','in',('guest','collaborator'))]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter name="by_role" string="Rol" context="{'group_by': 'role'}"/>
+                </group>
+            </search>
         </field>
     </record>
 
     <record id="action_artist" model="ir.actions.act_window">
-        <field name="name">Artista</field>
+        <field name="name">Artistas</field>
         <field name="res_model">casa_janus.artist</field>
-        <field name="view_mode">form,tree</field>
+        <field name="view_mode">tree,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                Configura el perfil del artista
+        Registra al artista principal y a los artistas invitados
+            </p>
+            <p>
+        Marca a <strong>Israel Cortés "Janus"</strong> como
+                <em>Artista principal</em> para que sea el predeterminado
+        en exposiciones y en la página /artista del sitio.
             </p>
         </field>
     </record>
 
-    <record id="view_exhibition_tree" model="ir.ui.view">
-        <field name="name">casa_janus.exhibition.tree</field>
+
+    <record id="view_exhibition_list" model="ir.ui.view">
+        <field name="name">casa_janus.exhibition.list</field>
         <field name="model">casa_janus.exhibition</field>
         <field name="arch" type="xml">
             <tree string="Exposiciones" decoration-success="state == 'active'" decoration-muted="state == 'past'">
                 <field name="name"/>
+                <field name="main_artist_id" string="Artista principal"/>
                 <field name="date_start"/>
                 <field name="date_end"/>
                 <field name="location"/>
+                <field name="city"/>
                 <field name="state" widget="badge" decoration-success="state == 'active'" decoration-info="state == 'upcoming'" decoration-muted="state == 'past'"/>
-                <field name="active" widget="toggle_button"/>
+                <field name="active" widget="boolean_toggle"/>
             </tree>
         </field>
     </record>
@@ -91,27 +149,65 @@
                             <field name="name" placeholder="Título"/>
                         </h1>
                     </div>
+
                     <group>
-                        <group>
-                            <field name="slug" placeholder="exposicion-2024"/>
+                        <group string="Artistas">
+                            <field name="main_artist_id" string="Artista principal" domain="[('is_main_artist','=',True)]" options="{'no_create': True}"/>
+                            <field name="guest_artist_ids" string="Artistas invitados" widget="many2many_tags" domain="[('role','in',('guest','collaborator'))]" options="{'no_create': False}"/>
+                        </group>
+                        <group string="Fechas y lugar">
+                            <field name="slug" placeholder="exposicion-titulo-2024"/>
                             <field name="date_start"/>
                             <field name="date_end"/>
+                            <field name="location" placeholder="Nombre de la galería"/>
+                            <field name="city" placeholder="Ciudad, País"/>
                             <field name="active"/>
                         </group>
-                        <group>
-                            <field name="location" placeholder="Galería / Ciudad"/>
-                            <field name="cover_cf_image_id" string="Cloudflare Image ID (portada)" placeholder="uuid"/>
-                        </group>
                     </group>
-                    <group string="Descripción">
+
+                    <group string="Imagen de portada (Cloudflare Images)">
+                        <field name="cover_cf_image_id" string="Cloudflare Image ID" placeholder="uuid"/>
+                    </group>
+
+                    <group string="Descripción / Texto curatorial">
                         <field name="description" nolabel="1" widget="html"/>
                     </group>
+
                     <notebook>
-                        <page string="Obras en exposición" name="artworks">
-                            <field name="artwork_ids" domain="[('active','=',True)]" widget="many2many_tags"/>
+
+                        <page string="Artistas con roles" name="artists">
+                            <p class="text-muted" style="font-size:12px; margin-bottom:12px;">
+                Aquí puedes asignar un rol específico a cada artista invitado
+                para esta exposición (curador, artista destacado, colaborador, etc.)
+                            </p>
+                            <field name="exhibition_artist_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="artist_id" domain="[('role','in',('guest','collaborator'))]" options="{'no_create': False}"/>
+                                    <field name="role_label"/>
+                                    <field name="bio_override" string="Bio específica (opcional)"/>
+                                </tree>
+                            </field>
                         </page>
+
+                        <page string="Obras" name="artworks">
+                            <field name="artwork_ids" widget="many2many_tags" domain="[('active','=',True)]"/>
+                        </page>
+
+                        <page string="Evento web" name="event">
+                            <group>
+                                <field name="website_event_id" string="Evento vinculado (Odoo Website)" help="Vincula con un evento del módulo Website para publicar en el calendario."/>
+                            </group>
+                            <div class="text-muted" style="font-size:12px; padding: 0 8px;">
+                Si vinculas a un evento de Odoo Website, los visitantes del sitio
+                podrán inscribirse desde la página del evento. La información de
+                artistas y obras de aquí se puede mapear manualmente al evento.
+                            </div>
+                        </page>
+
                     </notebook>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
@@ -122,9 +218,15 @@
         <field name="arch" type="xml">
             <search string="Buscar exposiciones">
                 <field name="name"/>
+                <field name="main_artist_id"/>
+                <field name="guest_artist_ids"/>
+                <filter name="active_now" string="En curso" domain="[('state','=','active')]"/>
                 <filter name="upcoming" string="Próximas" domain="[('state','=','upcoming')]"/>
-                <filter name="active_state" string="En curso" domain="[('state','=','active')]"/>
                 <filter name="past" string="Pasadas" domain="[('state','=','past')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter name="by_state" string="Estado" context="{'group_by': 'state'}"/>
+                    <filter name="by_artist" string="Artista principal" context="{'group_by': 'main_artist_id'}"/>
+                </group>
             </search>
         </field>
     </record>
@@ -133,40 +235,30 @@
         <field name="name">Exposiciones</field>
         <field name="res_model">casa_janus.exhibition</field>
         <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_upcoming': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                Registra tu primera exposición
-            </p>
-        </field>
-    </record>
-
-    <record id="action_commission" model="ir.actions.act_window">
-        <field name="name">Encargos</field>
-        <field name="res_model">casa_janus.commission</field>
-        <field name="view_mode">tree,form</field>
-        <field name="context">{'search_default_new': 1}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                No hay encargos aún
+        Registra tu primera exposición
             </p>
             <p>
-                Los encargos personalizados llegarán desde el formulario
-                del sitio web.
+        El artista principal (Janus) se asigna automáticamente.
+        Añade artistas invitados y sus roles específicos por exposición.
             </p>
         </field>
     </record>
 
-    <record id="view_commission_tree" model="ir.ui.view">
-        <field name="name">casa_janus.commission.tree</field>
+
+    <record id="view_commission_list" model="ir.ui.view">
+        <field name="name">casa_janus.commission.list</field>
         <field name="model">casa_janus.commission</field>
         <field name="arch" type="xml">
             <tree string="Encargos" decoration-success="state == 'accept'" decoration-danger="state == 'decline'" decoration-info="state == 'new'">
                 <field name="create_date" string="Fecha"/>
-                <field name="partner_name" string="Cliente"/>
+                <field name="partner_name"/>
                 <field name="email"/>
-                <field name="technique_id" string="Técnica"/>
-                <field name="budget_range" string="Presupuesto"/>
+                <field name="budget_range"/>
                 <field name="state" widget="badge" decoration-info="state == 'new'" decoration-warning="state == 'review'" decoration-success="state == 'accept'" decoration-danger="state == 'decline'"/>
+                <field name="crm_lead_id" string="Lead CRM" optional="show"/>
             </tree>
         </field>
     </record>
@@ -175,48 +267,62 @@
         <field name="name">casa_janus.commission.form</field>
         <field name="model">casa_janus.commission</field>
         <field name="arch" type="xml">
-            <form string="Encargo Personalizado">
+            <form string="Encargo">
                 <header>
-                    <button name="%(action_commission)d" type="action" string="← Volver a encargos" class="btn-secondary"/>
                     <field name="state" widget="statusbar" statusbar_visible="new,review,quoted,accept,decline"/>
                 </header>
                 <sheet>
                     <group>
-                        <group string="Datos del cliente">
-                            <field name="partner_name" string="Nombre"/>
+                        <group string="Cliente">
+                            <field name="partner_name"/>
                             <field name="email"/>
                             <field name="phone"/>
-                            <field name="create_date" string="Fecha solicitud" readonly="1"/>
+                            <field name="create_date" readonly="1" string="Fecha solicitud"/>
                         </group>
-                        <group string="Detalles del encargo">
-                            <field name="technique_id" string="Técnica preferida"/>
-                            <field name="budget_range" string="Presupuesto"/>
-                            <field name="ref_artwork_id" string="Obra de referencia"/>
+                        <group string="Detalles">
+                            <field name="budget_range"/>
+                            <field name="technique_id"/>
+                            <field name="ref_artwork_id"/>
+                            <field name="crm_lead_id" readonly="1"/>
                         </group>
                     </group>
                     <group string="Descripción del encargo">
                         <field name="description" nolabel="1" readonly="1"/>
                     </group>
+                    <group string="Obras de interés (seleccionadas en la galería web)">
+                        <field name="selected_artwork_ids" nolabel="1" widget="many2many_tags" readonly="1"/>
+                    </group>
                     <group string="Notas internas">
-                        <field name="notes" nolabel="1" placeholder="Notas privadas del artista..."/>
+                        <field name="notes" nolabel="1" placeholder="Notas privadas..."/>
                     </group>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
 
-    <record id="view_commission_search" model="ir.ui.view">
-        <field name="name">casa_janus.commission.search</field>
-        <field name="model">casa_janus.commission</field>
-        <field name="arch" type="xml">
-            <search string="Buscar encargos">
-                <field name="partner_name"/>
-                <field name="email"/>
-                <filter name="new" string="Nuevos" domain="[('state','=','new')]"/>
-                <filter name="review" string="En revisión" domain="[('state','=','review')]"/>
-                <filter name="accept" string="Aceptados" domain="[('state','=','accept')]"/>
-            </search>
-        </field>
+    <record id="action_commission" model="ir.actions.act_window">
+        <field name="name">Encargos</field>
+        <field name="res_model">casa_janus.commission</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_new': 1}</field>
     </record>
+
+
+    <menuitem id="menu_casa_janus_root" name="Casa Janus" sequence="10" web_icon="casa_janus,static/description/icon.png"/>
+
+    <menuitem id="menu_catalogo" name="Catálogo" parent="menu_casa_janus_root" sequence="10"/>
+
+    <menuitem id="menu_artworks" name="Obras" parent="menu_catalogo" action="action_artwork" sequence="10"/>
+    <menuitem id="menu_collections" name="Colecciones" parent="menu_catalogo" action="action_collection" sequence="20"/>
+    <menuitem id="menu_techniques" name="Técnicas" parent="menu_catalogo" action="action_technique" sequence="30"/>
+
+    <menuitem id="menu_galeria" name="Galería" parent="menu_casa_janus_root" sequence="20"/>
+
+    <menuitem id="menu_artists" name="Artistas" parent="menu_galeria" action="action_artist" sequence="10"/>
+    <menuitem id="menu_exhibitions" name="Exposiciones" parent="menu_galeria" action="action_exhibition" sequence="20"/>
+
+    <menuitem id="menu_clientes" name="Clientes" parent="menu_casa_janus_root" sequence="30"/>
+    <menuitem id="menu_commissions" name="Encargos" parent="menu_clientes" action="action_commission" sequence="10"/>
 
 </odoo>
