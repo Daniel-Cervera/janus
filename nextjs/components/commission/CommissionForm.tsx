@@ -18,7 +18,7 @@ import styles from './CommissionForm.module.css'
 import type { Technique, BudgetRange } from '@/lib/types'
 
 interface CommissionFormProps {
-  techniques: Technique[]
+  techniques?: Technique[]
   refArtworkSlug?: string   // pre-rellenado desde ?ref= en la URL
   refArtworkId?: number
   refArtworkName?: string

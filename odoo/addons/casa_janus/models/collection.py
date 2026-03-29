@@ -6,6 +6,7 @@ class CasaJanusCollection(models.Model):
     _name = 'casa_janus.collection'
     _description = 'Colección'
     _order = 'sequence, name'
+    _inherit = ['casa_janus.cloudflare.mixin']
 
     name = fields.Char(string='Nombre', required=True)
     slug = fields.Char(string='Slug URL', required=True, index=True)
@@ -33,11 +34,6 @@ class CasaJanusCollection(models.Model):
             if rec.year_start and rec.year_end:
                 if rec.year_end < rec.year_start:
                     raise ValidationError('El año de fin no puede ser anterior al de inicio.')
-
-    def _build_cf_url(self, cf_id, variant='public'):
-        if not cf_id: return None
-        base = self.env['ir.config_parameter'].sudo().get_param('casa_janus.cloudflare_images_base_url', '')
-        return f'{base.rstrip("/")}/{cf_id}/{variant}' if base else None
 
     def api_dict(self, include_artworks=False):
         result = {

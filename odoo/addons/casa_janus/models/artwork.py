@@ -14,7 +14,7 @@ class CasaJanusArtwork(models.Model):
     _name = 'casa_janus.artwork'
     _description = 'Obra de Arte'
     _order = 'year desc, sequence, name'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread', 'mail.activity.mixin', 'casa_janus.cloudflare.mixin']
 
     # ── Identificación ──────────────────────────────────────────────────────
     name = fields.Char(string='Título', required=True, tracking=True)
@@ -81,11 +81,6 @@ class CasaJanusArtwork(models.Model):
         for rec in self:
             if not pattern.match(rec.slug):
                 raise ValidationError(f'El slug "{rec.slug}" no es válido. Usa solo letras minúsculas, números y guiones.')
-
-    def _build_cf_url(self, cf_id, variant='public'):
-        if not cf_id: return None
-        base = self.env['ir.config_parameter'].sudo().get_param('casa_janus.cloudflare_images_base_url', '')
-        return f'{base.rstrip("/")}/{cf_id}/{variant}' if base else None
 
     def api_dict(self, detail=False):
         primary_url = self._build_cf_url(self.primary_cf_image_id)

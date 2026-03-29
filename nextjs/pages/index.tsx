@@ -11,27 +11,29 @@
 import { GetStaticProps } from 'next'
 import Head from 'next/head'
 import Link from 'next/link'
-import { getTechniques, getArtworks } from '@/lib/odoo-client'
-import type { Technique, Artwork } from '@/lib/types'
+import { getTechniques, getArtworks, getExhibitions } from '@/lib/odoo-client'
+import type { Technique, Artwork, Exhibition } from '@/lib/types'
 import HeroSection from '@/components/hero/HeroSection'
+import EventsSection from '@/components/exhibition/EventsSection'
 import styles from './Home.module.css'
 
 interface HomeProps {
-  techniques:       Technique[]
-  featuredArtworks: Artwork[]
+  techniques:            Technique[]
+  featuredArtworks:      Artwork[]
+  upcomingExhibitions:   Exhibition[]
 }
 
-export default function Home({ techniques, featuredArtworks }: HomeProps) {
+export default function Home({ techniques, featuredArtworks, upcomingExhibitions }: HomeProps) {
   return (
     <>
       <Head>
-        <title>Janus — Arte Visual Contemporáneo</title>
+        <title>Casa Janus — Galería de Arte Contemporáneo</title>
         <meta
           name="description"
-          content="Israel Cortés 'Janus'. Arte abstracto y figurativo. Textura, color y memoria."
+          content="Casa Janus. Galería de arte contemporáneo en México. Obra original, encargos y exposiciones."
         />
-        <meta property="og:title"       content="Janus — Arte Visual Contemporáneo" />
-        <meta property="og:description" content="Textura · Abstracción · Memoria" />
+        <meta property="og:title"       content="Casa Janus — Galería de Arte Contemporáneo" />
+        <meta property="og:description" content="Espacio de creación, colección y encuentro" />
         <meta property="og:type"        content="website" />
         {/* URL canónica dinámica según entorno */}
         <link
@@ -52,12 +54,13 @@ export default function Home({ techniques, featuredArtworks }: HomeProps) {
           via client-side routing de Next.js (Link — sin recarga de página).
         */}
         <HeroSection
-          artistName="Janus"
-          tagline="Textura · Abstracción · Memoria"
+          headline="Casa Janus"
+          eyebrow="Galería de Arte Contemporáneo · México"
+          tagline="Espacio de creación, colección y encuentro"
           ctaPrimaryText="Explorar la galería"
           ctaPrimaryHref="/galeria"
-          ctaSecondaryText="Statement del artista"
-          ctaSecondaryHref="/biography"
+          ctaSecondaryText="Próximas exposiciones"
+          ctaSecondaryHref="#eventos"
           fallbackImageSrc="/images/hero-fallback.jpg"
         />
 
@@ -131,20 +134,24 @@ export default function Home({ techniques, featuredArtworks }: HomeProps) {
           </section>
         )}
 
-        {/* ── CTA hacia Statement/Biografía ─────────────────────── */}
-        {/* Tarea 3: segundo punto de entrada a /biography */}
-        <section className={styles.statementCta}>
-          <div className={styles.statementInner}>
-            <p className={styles.statementEyebrow}>Sobre el artista</p>
-            <h2 className={styles.statementTitle}>
+        {/* ── Eventos / Exposiciones ────────────────────────────── */}
+        <EventsSection exhibitions={upcomingExhibitions} />
+
+        {/* ── Visión del Dueño ──────────────────────────────────── */}
+        <section className={styles.ownerVision} id="vision">
+          <div className={styles.ownerVisionInner}>
+            <p className={styles.ownerVisionEyebrow}>El artista detrás del espacio</p>
+            <h2 className={styles.ownerVisionName}>Israel Cortés · Janus</h2>
+            <blockquote className={styles.ownerVisionQuote}>
               "La textura tiene alma, emoción, cierta fragilidad."
-            </h2>
-            <p className={styles.statementExcerpt}>
-              Israel Cortés explora el diálogo entre lo abstracto y lo figurativo,
-              lo geométrico y lo orgánico, desde una memoria visual profundamente mexicana.
+            </blockquote>
+            <p className={styles.ownerVisionExcerpt}>
+              Exploración del diálogo entre lo abstracto y lo figurativo,
+              lo geométrico y lo orgánico — desde una memoria visual
+              profundamente mexicana.
             </p>
-            <Link href="/biography" className={styles.heroCta}>
-              Leer el statement completo
+            <Link href="/artista" className={styles.ctaSecondary}>
+              Conocer al artista
             </Link>
           </div>
         </section>
@@ -174,21 +181,27 @@ export default function Home({ techniques, featuredArtworks }: HomeProps) {
 
 export const getStaticProps: GetStaticProps<HomeProps> = async () => {
   try {
-    const [techniques, featuredResult] = await Promise.all([
+    const [techniques, featuredResult, allExhibitions] = await Promise.all([
       getTechniques(),
       getArtworks({ featured: true, perPage: 6 }),
+      getExhibitions({ state: 'all', limit: 10 }),
     ])
+
+    const upcomingExhibitions = allExhibitions
+      .filter(e => e.state === 'upcoming' || e.state === 'active')
+      .slice(0, 3)
 
     return {
       props: {
         techniques,
         featuredArtworks: featuredResult.data,
+        upcomingExhibitions,
       },
       revalidate: 600,
     }
   } catch {
     return {
-      props: { techniques: [], featuredArtworks: [] },
+      props: { techniques: [], featuredArtworks: [], upcomingExhibitions: [] },
       revalidate: 60,
     }
   }

@@ -141,9 +141,9 @@ export default function SelectionDrawer() {
                         <div className={styles.itemInfo}>
                           <p className={styles.itemName}>{item.name}</p>
                           <p className={styles.itemMeta}>{item.year} · {item.technique}</p>
-                          {item.price > 0 && (
+                          {(item.price ?? 0) > 0 && (
                             <p className={styles.itemPrice}>
-                              {item.currency} {item.price.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+                              {item.currency} {(item.price ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
                             </p>
                           )}
                         </div>

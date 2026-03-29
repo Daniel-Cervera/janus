@@ -242,6 +242,63 @@
   transform: translateX(4px);
 }
 
+/* ── Visión del Dueño ────────────────────────────────────────── */
+.ownerVision {
+  padding: 100px 24px;
+  background: #0d0d0d;
+  border-top: 1px solid #2c2c2c;
+  border-bottom: 1px solid #2c2c2c;
+  text-align: center;
+}
+
+.ownerVisionInner {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.ownerVisionEyebrow {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #c41e1e;
+  margin: 0;
+}
+
+.ownerVisionName {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 300;
+  font-style: italic;
+  color: #f4efe9;
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+.ownerVisionQuote {
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(22px, 3.5vw, 32px);
+  font-style: italic;
+  font-weight: 300;
+  color: #c6bdb3;
+  margin: 0;
+  padding: 0 0 0 20px;
+  border-left: 2px solid #c41e1e;
+  text-align: left;
+  align-self: stretch;
+  line-height: 1.5;
+}
+
+.ownerVisionExcerpt {
+  font-size: 15px;
+  color: #6a6560;
+  line-height: 1.8;
+  margin: 0;
+}
+
 /* ── Contacto ────────────────────────────────────────────────── */
 .contact {
   padding: 80px 24px;

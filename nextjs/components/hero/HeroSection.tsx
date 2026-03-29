@@ -48,8 +48,10 @@ const YT_EMBED_URL = [
 ].join('')
 
 interface HeroSectionProps {
-  /** Título principal del artista */
-  artistName?: string
+  /** Título principal (nombre del artista o marca) */
+  headline?: string
+  /** Texto de eyebrow sobre el título */
+  eyebrow?: string
   /** Frase o tagline debajo del nombre */
   tagline?: string
   /** Texto del botón principal */
@@ -65,7 +67,8 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({
-  artistName = 'JANUS',
+  headline = 'JANUS',
+  eyebrow = 'Arte visual contemporáneo · México',
   tagline = 'Textura · Abstracción · Memoria',
   ctaPrimaryText = 'Explorar la galería',
   ctaPrimaryHref = '/galeria',
@@ -92,7 +95,7 @@ export default function HeroSection({
   const showFallback = isIOS
 
   return (
-    <section className={styles.hero} aria-label="Presentación del artista Janus">
+    <section className={styles.hero} aria-label="Bienvenida a Casa Janus">
 
       {/* ── Capa 1: Fondo de video (o imagen fallback) ─────────────── */}
       <div className={styles.videoBackground} aria-hidden="true">
@@ -112,7 +115,7 @@ export default function HeroSection({
             onLoad={handleIframeLoad}
             allow="autoplay; encrypted-media"
             allowFullScreen={false}
-            title="Video manifiesto artístico de Janus"
+            title="Video Casa Janus"
             // Accesibilidad: ocultar del árbol de accesibilidad
             tabIndex={-1}
             aria-hidden="true"
@@ -130,11 +133,11 @@ export default function HeroSection({
       <div className={styles.content}>
 
         {/* Label decorativo */}
-        <p className={styles.eyebrow}>Arte visual contemporáneo · México</p>
+        <p className={styles.eyebrow}>{eyebrow}</p>
 
-        {/* Nombre del artista */}
+        {/* Título principal */}
         <h1 className={styles.artistName}>
-          {artistName}
+          {headline}
         </h1>
 
         {/* CTAs */}

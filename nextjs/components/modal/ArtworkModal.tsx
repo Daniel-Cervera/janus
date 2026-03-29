@@ -309,7 +309,7 @@ function ArtworkInfo({
             <p className={styles.priceLabel}>precio</p>
             <p className={styles.price}>
               {artwork.currency === 'MXN' ? '$' : 'USD '}
-              {artwork.price.toLocaleString('es-MX', {
+              {(artwork.price ?? 0).toLocaleString('es-MX', {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
               })}

@@ -16,11 +16,11 @@ export type BudgetRange =
 // ── Imágenes Cloudflare ───────────────────────────────────────────────────────
 
 export interface CFImage {
-  cf_id: string
-  url: string | null
-  url_thumb: string | null
-  url_medium: string | null
-  url_large: string | null
+  cf_id?: string
+  url?: string | null
+  url_thumb?: string | null
+  url_medium?: string | null
+  url_large?: string | null
   is_primary?: boolean
   alt_text?: string
   sequence?: number
@@ -46,7 +46,7 @@ export interface TechniqueRef {
 }
 
 export interface Technique extends TechniqueRef {
-  description: string
+  description?: string | null
   sequence: number
   collection_count: number
   artwork_count: number
@@ -85,12 +85,12 @@ export interface Artwork {
   year: number
   collection: CollectionRef
   technique: TechniqueRef
-  medium: string
+  medium: string | null
   dimensions: ArtworkDimensions
-  description: string
-  /** Edición grabado. Ej: "3/12". Null si no aplica. */
-  edition: string | null
-  price: number
+  description: string | null
+  /** Edición grabado. Ej: "3/12". Null/undefined si no aplica. */
+  edition?: string | null
+  price: number | null
   currency: string
   availability: Availability
   availability_label: string
@@ -134,6 +134,8 @@ export interface CVItem {
 export interface Artist {
   name: string
   biography: string   // HTML
+  biography_html?: string
+  photo_url?: string
   artist_statement: string
   photo: CFImage
   cv: CVItem[]
@@ -144,15 +146,17 @@ export interface Artist {
 export interface Exhibition {
   id: number
   name: string
-  slug: string
-  date_start: string | null  // ISO date
-  date_end: string | null
-  location: string
-  description: string        // HTML
-  cover_image: string | null
+  slug?: string
+  date_start?: string | null  // ISO date
+  date_end?: string | null
+  location?: string | null
+  city?: string | null
+  description?: string | null  // HTML
+  cover_image?: string | null
   state: ExhibitionState
   artwork_count: number
-  artworks?: Artwork[]       // solo si include_artworks=true
+  main_artist?: { id: number; name: string } | null
+  artworks?: Artwork[]         // solo si include_artworks=true
 }
 
 // ── Encargo personalizado ─────────────────────────────────────────────────────

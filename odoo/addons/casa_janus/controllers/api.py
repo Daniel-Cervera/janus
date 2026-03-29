@@ -213,7 +213,9 @@ class CasaJanusAPI(http.Controller):
         if request.httprequest.method == 'OPTIONS':
             return Response(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization'})
             
-        artist = request.env['casa_janus.artist'].sudo().search([], limit=1)
+        artist = request.env['casa_janus.artist'].sudo().search(
+            [('is_main_artist', '=', True)], limit=1
+        )
         if not artist:
             return _json_error('Artist profile not configured', 404)
         return _json_response({'data': artist.api_dict()})

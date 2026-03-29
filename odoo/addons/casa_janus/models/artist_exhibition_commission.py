@@ -15,6 +15,7 @@ class CasaJanusArtist(models.Model):
     _name        = 'casa_janus.artist'
     _description = 'Artista'
     _order       = 'is_main_artist desc, name'
+    _inherit     = ['casa_janus.cloudflare.mixin']
 
     name = fields.Char(string='Nombre artístico / completo', required=True)
     slug = fields.Char(string='Slug URL', help='Para la ruta /artista/[slug]. Solo para el artista principal.')
@@ -64,12 +65,6 @@ class CasaJanusArtist(models.Model):
                         f'Ya existe un artista principal: "{others[0].name}". '
                         'Desmarca ese registro antes de asignar otro.'
                     )
-
-    def _build_cf_url(self, cf_id, variant='public'):
-        if not cf_id:
-            return None
-        base = self.env['ir.config_parameter'].sudo().get_param('casa_janus.cloudflare_images_base_url', '')
-        return f'{base.rstrip("/")}/{cf_id}/{variant}' if base else None
 
     def api_dict(self):
         return {
@@ -153,7 +148,7 @@ class CasaJanusExhibition(models.Model):
     _name        = 'casa_janus.exhibition'
     _description = 'Exposición'
     _order       = 'date_start desc'
-    _inherit     = ['mail.thread']
+    _inherit     = ['mail.thread', 'casa_janus.cloudflare.mixin']
 
     name = fields.Char(string='Título', required=True, tracking=True)
     slug = fields.Char(string='Slug URL', index=True)
@@ -187,7 +182,6 @@ class CasaJanusExhibition(models.Model):
         selection=[('upcoming', 'Próxima'), ('active', 'En curso'), ('past', 'Pasada')],
         string='Estado',
         compute='_compute_state',
-        store=True,
     )
 
     description     = fields.Html(string='Descripción', sanitize=True)
@@ -212,11 +206,6 @@ class CasaJanusExhibition(models.Model):
                 rec.state = 'past'
             else:
                 rec.state = 'active'
-
-    def _build_cf_url(self, cf_id, variant='public'):
-        if not cf_id: return None
-        base = self.env['ir.config_parameter'].sudo().get_param('casa_janus.cloudflare_images_base_url', '')
-        return f'{base.rstrip("/")}/{cf_id}/{variant}' if base else None
 
     def api_dict(self):
         guest_artists = []

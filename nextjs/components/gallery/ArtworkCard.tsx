@@ -118,9 +118,9 @@ export default function ArtworkCard({ artwork, index, onOpen }: ArtworkCardProps
               </p>
             )}
             <div className={styles.infoBottom}>
-              {artwork.price > 0 && artwork.availability !== 'nfs' && (
+              {(artwork.price ?? 0) > 0 && artwork.availability !== 'nfs' && (
                 <span className={styles.price}>
-                  {artwork.currency} {artwork.price.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+                  {artwork.currency} {(artwork.price ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
                 </span>
               )}
               <span

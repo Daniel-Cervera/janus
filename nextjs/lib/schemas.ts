@@ -6,10 +6,10 @@ export const TechniqueSchema = z.object({
     name: z.string(),
     slug: z.string(),
     description: z.string().nullable().optional(),
-    collection_count: z.number().optional(),
-    artwork_count: z.number().optional(),
-    sequence: z.number().optional(),
-}).passthrough()
+    collection_count: z.number(),
+    artwork_count: z.number(),
+    sequence: z.number(),
+})
 
 export const CollectionSchema = z.object({
     id: z.number(),
@@ -30,14 +30,14 @@ export const CollectionSchema = z.object({
 }).passthrough()
 
 export const ArtworkSchema = z.object({
-    id: z.number().optional(),
+    id: z.number(),
     slug: z.string(),
     name: z.string(),
-    year: z.number().int().optional(),
-    availability: z.enum(['available', 'sold', 'reserved', 'nfs']).optional(),
-    availability_label: z.string().optional(),
-    price: z.number().nullable().optional(),
-    currency: z.string().optional(),
+    year: z.number().int(),
+    availability: z.enum(['available', 'sold', 'reserved', 'nfs']),
+    availability_label: z.string(),
+    price: z.number().nullable(),
+    currency: z.string(),
 
     artist: z.object({
         id: z.number(),
@@ -49,27 +49,27 @@ export const ArtworkSchema = z.object({
         id: z.number(),
         name: z.string(),
         slug: z.string()
-    }).optional(),
+    }),
 
     collection: z.object({
         id: z.number(),
         name: z.string(),
         slug: z.string()
-    }).optional(),
+    }),
 
-    medium: z.string().nullable().optional(),
+    medium: z.string().nullable(),
 
     dimensions: z.object({
         width_cm: z.number(),
         height_cm: z.number(),
-        depth_cm: z.number().nullable().optional(),
+        depth_cm: z.number().nullable(),
         label: z.string(),
         aspect_ratio: z.number()
-    }).optional(),
+    }),
 
-    description: z.string().nullable().optional(),
+    description: z.string().nullable(),
     edition: z.string().nullable().optional(),
-    is_featured: z.boolean().optional(),
+    is_featured: z.boolean(),
 
     primary_image: z.object({
         cf_id: z.string().optional(),
@@ -77,15 +77,15 @@ export const ArtworkSchema = z.object({
         url_thumb: z.string().nullable().optional(),
         url_medium: z.string().nullable().optional(),
         url_large: z.string().nullable().optional(),
-    }).optional(),
+    }),
 
     seo: z.object({
-        title: z.string().optional(),
-        description: z.string().optional()
-    }).optional(),
+        title: z.string(),
+        description: z.string()
+    }),
 
     images: z.array(z.any()).default([]),
-}).passthrough()
+})
 
 export const ArtistSchema = z.object({
     id: z.number().optional(),
@@ -107,10 +107,10 @@ export const ArtistSchema = z.object({
 }).passthrough()
 
 export const ExhibitionSchema = z.object({
-    id: z.number().optional(),
+    id: z.number(),
     name: z.string(),
     slug: z.string().optional(),
-    state: z.string().optional(),
+    state: z.enum(['upcoming', 'active', 'past']),
     date_start: z.string().nullable().optional(),
     date_end: z.string().nullable().optional(),
     location: z.string().nullable().optional(),
@@ -119,11 +119,11 @@ export const ExhibitionSchema = z.object({
     cover_image: z.string().nullable().optional(),
     main_artist: z.object({
         id: z.number(),
-        name: z.string()
+        name: z.string(),
     }).nullable().optional(),
     guest_artists: z.array(z.any()).default([]),
-    artwork_count: z.number().optional()
-}).passthrough()
+    artwork_count: z.number(),
+})
 
 export const CommissionResponseSchema = z.object({
     success: z.boolean(),
@@ -134,9 +134,9 @@ export const CommissionResponseSchema = z.object({
 export function createListResponseSchema<T extends z.ZodTypeAny>(itemSchema: T) {
     return z.object({
         data: z.array(itemSchema),
-        total: z.number().optional(),
+        total: z.number(),
         page: z.number().optional(),
         per_page: z.number().optional(),
         pages: z.number().optional()
-    }).passthrough()
+    })
 }

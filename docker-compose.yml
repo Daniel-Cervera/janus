@@ -64,6 +64,7 @@ services:
     build:
       context: ./nextjs
       dockerfile: Dockerfile
+      target: development
     container_name: casajanus_nextjs
     restart: unless-stopped
     depends_on:

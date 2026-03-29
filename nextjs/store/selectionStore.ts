@@ -18,7 +18,7 @@ export interface SelectedArtwork {
   name:       string
   year:       number
   technique:  string
-  price:      number
+  price:      number | null
   currency:   string
   imageUrl:   string | null
   addedAt:    number

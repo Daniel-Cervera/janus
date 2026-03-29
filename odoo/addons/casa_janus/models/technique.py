@@ -28,12 +28,16 @@ class CasaJanusTechnique(models.Model):
         for rec in self:
             rec.collection_count = len(rec.collection_ids)
 
+    @api.depends('collection_ids.artwork_ids')
     def _compute_artwork_count(self):
+        artwork_data = self.env['casa_janus.artwork'].read_group(
+            [('technique_id', 'in', self.ids), ('active', '=', True)],
+            ['technique_id'],
+            ['technique_id'],
+        )
+        counts = {r['technique_id'][0]: r['technique_id_count'] for r in artwork_data}
         for rec in self:
-            rec.artwork_count = self.env['casa_janus.artwork'].search_count([
-                ('technique_id', '=', rec.id), 
-                ('active', '=', True)
-            ])
+            rec.artwork_count = counts.get(rec.id, 0)
 
     @api.constrains('slug')
     def _check_slug(self):

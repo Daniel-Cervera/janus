@@ -9,3 +9,4 @@ nextjs/node_modules/
 *.pyc
 .DS_Store
 Thumbs.db
+.ai_docs/
