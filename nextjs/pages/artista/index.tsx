@@ -47,8 +47,17 @@ export default function ArtistaPage({ artist }: ArtistaProps) {
       <main className={styles.page}>
         <div className={styles.splitLayout}>
 
-          {/* LEFT — Foto + nombre */}
+          {/* ─── LEFT: eyebrow + nombre + foto ─── */}
           <div className={styles.photoCol}>
+            {/* Nombre arriba */}
+            <div className={styles.nameBlock}>
+              <p className={styles.artistEyebrow}>Artista</p>
+              <p className={styles.firstName}>Israel</p>
+              <p className={styles.lastName}>Cortés</p>
+              <p className={styles.artistLabel}>JANUS</p>
+            </div>
+
+            {/* Foto abajo */}
             <div className={styles.photoWrap}>
               {artist.photo_url ? (
                 <img
@@ -59,20 +68,21 @@ export default function ArtistaPage({ artist }: ArtistaProps) {
                 />
               ) : (
                 <div className={styles.photoPlaceholder}>
-                  <span>Fotografía no disponible</span>
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                    <circle cx="24" cy="18" r="8" stroke="#3a3a3a" strokeWidth="1.5" />
+                    <path d="M8 42c0-8.837 7.163-16 16-16s16 7.163 16 16" stroke="#3a3a3a" strokeWidth="1.5" />
+                  </svg>
                 </div>
               )}
             </div>
-            <div className={styles.nameBlock}>
-              <p className={styles.firstName}>Israel</p>
-              <p className={styles.lastName}>Cortés</p>
-              <p className={styles.artistLabel}>JANUS</p>
-            </div>
           </div>
 
-          {/* RIGHT — Bio + quote + CV */}
+          {/* ─── RIGHT: bio + quote + CV ─── */}
           <div className={styles.bioCol}>
-            <p className={styles.eyebrow}>Artista visual · México</p>
+            <div
+              className={styles.bioText}
+              dangerouslySetInnerHTML={{ __html: artist.biography_html || artist.biography || '' }}
+            />
 
             {artist.artist_statement && (
               <blockquote className={styles.quote}>
@@ -80,14 +90,9 @@ export default function ArtistaPage({ artist }: ArtistaProps) {
               </blockquote>
             )}
 
-            <div
-              className={styles.bioText}
-              dangerouslySetInnerHTML={{ __html: artist.biography_html || artist.biography || '' }}
-            />
-
             {Array.isArray(artist.cv_items) && artist.cv_items.length > 0 && (
               <div className={styles.cv}>
-                <p className={styles.cvLabel}>TRAYECTORIA</p>
+                <p className={styles.cvLabel}>CURRICULUM</p>
                 <ul className={styles.cvList}>
                   {artist.cv_items.map((item: any, i: number) => (
                     <li key={i} className={styles.cvItem}>
@@ -118,10 +123,7 @@ export default function ArtistaPage({ artist }: ArtistaProps) {
 export const getStaticProps: GetStaticProps<ArtistaProps> = async () => {
   try {
     const artist = await getArtist()
-
-    if (!artist) {
-      return { props: { artist: null }, revalidate: 60 }
-    }
+    if (!artist) return { props: { artist: null }, revalidate: 60 }
 
     const safeArtist = {
       ...artist,
@@ -136,8 +138,7 @@ export const getStaticProps: GetStaticProps<ArtistaProps> = async () => {
         : [],
     }
 
-    const cleanArtist = sanitizeForNextJs(safeArtist)
-    return { props: { artist: cleanArtist }, revalidate: 3600 }
+    return { props: { artist: sanitizeForNextJs(safeArtist) }, revalidate: 3600 }
   } catch (error) {
     console.error('Error fetching artist from Odoo:', error)
     return { props: { artist: null }, revalidate: 10 }

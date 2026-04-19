@@ -65,6 +65,7 @@ export default function Home({ techniques, featuredArtworks, upcomingExhibitions
                           ) : (
                             <div className={styles.imgPlaceholder} />
                           )}
+                          <span className={styles.featuredBadge}>DESTACADA</span>
                         </div>
                         <div className={styles.featuredInfo}>
                           <p className={styles.featuredTitle}>{artwork.name}</p>

@@ -127,9 +127,7 @@ const GaleriaPage: NextPage<GaleriaPageProps> = ({ techniques, initialArtworks }
 
         {/* ── Hero strip ────────────────────────────────── */}
         <header className={styles.hero}>
-          <p className={styles.heroLabel} style={{ color: '#E53E3E', fontWeight: 'bold' }}>
-            CATÁLOGO
-          </p>
+          <p className={styles.heroLabel}>CATÁLOGO</p>
           <h1 className={styles.heroTitle}>
             {heroTitle}
           </h1>

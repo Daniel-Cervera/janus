@@ -191,49 +191,45 @@ export default function CommissionForm({
       </div>
 
       {/* ── Campos ───────────────────────────────────────────── */}
-      <div className={styles.row}>
-        <Field
-          label="Nombre *"
-          error={errors.partner_name}
-        >
+      <div className={styles.rowTwo}>
+        <Field label="Nombre *" error={errors.partner_name}>
           <input
             type="text"
             className={`${styles.input} ${errors.partner_name ? styles.inputError : ''}`}
-            placeholder="Tu nombre completo"
+            placeholder="Tu nombre"
             value={form.partner_name}
             onChange={set('partner_name')}
             autoComplete="name"
             required
           />
         </Field>
-      </div>
-
-      <div className={styles.rowTwo}>
         <Field label="Email *" error={errors.email}>
           <input
             type="email"
             className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
-            placeholder="correo@ejemplo.com"
+            placeholder="correo@dominio.com"
             value={form.email}
             onChange={set('email')}
             autoComplete="email"
             required
           />
         </Field>
-        <Field label="Teléfono">
-          <input
-            type="tel"
-            className={styles.input}
-            placeholder="+52 (opcional)"
-            value={form.phone}
-            onChange={set('phone')}
-            autoComplete="tel"
-          />
-        </Field>
       </div>
 
       <div className={styles.rowTwo}>
-        <Field label="Técnica preferida">
+        <Field label="Presupuesto">
+          <select
+            className={styles.select}
+            value={form.budget_range}
+            onChange={set('budget_range')}
+          >
+            <option value="">Seleccionar</option>
+            {BUDGET_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Técnica">
           <select
             className={styles.select}
             value={form.technique_id}
@@ -242,18 +238,6 @@ export default function CommissionForm({
             <option value="">Sin preferencia</option>
             {(techniques ?? []).map(t => (
               <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Presupuesto estimado">
-          <select
-            className={styles.select}
-            value={form.budget_range}
-            onChange={set('budget_range')}
-          >
-            <option value="">Seleccionar...</option>
-            {BUDGET_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
         </Field>

@@ -6,11 +6,25 @@
   font-family: var(--font-primary);
 }
 
-.hero {
-  padding: 80px 32px 60px;
-  text-align: center;
-  border-bottom: 1px solid var(--cj-border);
+/* ── Split layout (izq: info / der: form) ───────────────────── */
+.splitLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: calc(100vh - 60px);
 }
+
+@media (max-width: 900px) {
+  .splitLayout { grid-template-columns: 1fr; }
+}
+
+/* ── LEFT ─────────────────────────────────────────────────────── */
+.leftCol {
+  padding: 64px 56px;
+  border-right: 1px solid var(--cj-border);
+}
+
+@media (max-width: 1100px) { .leftCol { padding: 56px 40px; } }
+@media (max-width: 900px)  { .leftCol { border-right: none; border-bottom: 1px solid var(--cj-border); padding: 48px 20px; } }
 
 .eyebrow {
   font-family: var(--font-primary);
@@ -24,110 +38,62 @@
 
 .title {
   font-family: var(--font-primary);
-  font-size: var(--ts-page-title);
+  font-size: clamp(40px, 6vw, 80px);
   font-weight: var(--fw-extrabold);
   letter-spacing: -0.03em;
   color: var(--cj-white);
-  margin: 0 0 20px;
-  line-height: 1;
-  text-transform: uppercase;
+  margin: 0 0 56px;
+  line-height: 0.95;
 }
 
-.subtitle {
-  font-family: var(--font-primary);
-  font-size: 15px;
-  font-weight: var(--fw-light);
-  color: var(--cj-gray);
-  max-width: 520px;
-  margin: 0 auto;
-  line-height: 1.7;
-}
-
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 80px 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 80px;
-}
-
-/* ── Sección de proceso ──────────────────────────────────────── */
-.processSection {}
-
-.processTitle {
-  font-family: var(--font-primary);
-  font-size: 10px;
-  font-weight: var(--fw-medium);
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: var(--cj-red);
-  margin: 0 0 40px;
-}
-
+/* ── Pasos (inline, sin cards) ──────────────────────────────── */
 .stepsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2px;
+  gap: 32px 40px;
 }
 
-@media (max-width: 640px) {
-  .stepsGrid { grid-template-columns: 1fr; }
+@media (max-width: 480px) {
+  .stepsGrid { grid-template-columns: 1fr; gap: 24px; }
 }
 
 .step {
-  background: var(--cj-black-soft);
-  border: 1px solid var(--cj-border);
-  padding: 36px 32px;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  align-items: flex-start;
 }
 
 .stepNum {
   font-family: var(--font-primary);
-  font-size: 48px;
-  font-weight: var(--fw-extrabold);
-  letter-spacing: -0.03em;
-  color: var(--cj-border-2, #2a2a2a);
-  line-height: 1;
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.1em;
+  color: var(--cj-red);
+  flex-shrink: 0;
+  padding-top: 1px;
 }
 
 .stepTitle {
   font-family: var(--font-primary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: var(--fw-semibold);
   color: var(--cj-white);
-  margin: 0;
-  letter-spacing: 0;
+  margin: 0 0 4px;
 }
 
 .stepText {
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: var(--fw-light);
   color: var(--cj-gray);
-  line-height: 1.7;
+  line-height: 1.6;
   margin: 0;
 }
 
-/* ── Sección de formulario ───────────────────────────────────── */
-.formSection {
-  max-width: 620px;
+/* ── RIGHT ─────────────────────────────────────────────────────── */
+.rightCol {
+  padding: 64px 56px;
 }
 
-.formTitle {
-  font-family: var(--font-primary);
-  font-size: 10px;
-  font-weight: var(--fw-medium);
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: var(--cj-red);
-  margin: 0 0 40px;
-}
-
-@media (max-width: 640px) {
-  .hero { padding: 60px 20px 40px; }
-  .container { padding: 60px 20px; gap: 60px; }
-  .step { padding: 28px 20px; }
-}
+@media (max-width: 1100px) { .rightCol { padding: 56px 40px; } }
+@media (max-width: 900px)  { .rightCol { padding: 48px 20px; } }

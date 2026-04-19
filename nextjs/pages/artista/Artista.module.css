@@ -17,7 +17,7 @@
   .splitLayout { grid-template-columns: 1fr; }
 }
 
-/* ── LEFT — Foto + nombre ─────────────────────────────────────── */
+/* ── LEFT — nombre arriba, foto abajo ─────────────────────────── */
 .photoCol {
   border-right: 1px solid var(--cj-border);
   display: flex;
@@ -28,56 +28,31 @@
   .photoCol { border-right: none; border-bottom: 1px solid var(--cj-border); }
 }
 
-.photoWrap {
-  background: var(--cj-surface);
-  border-left: 3px solid var(--cj-red);
-  flex: 1;
-}
-
-.photo {
-  width: 100%;
-  display: block;
-  aspect-ratio: 3/4;
-  object-fit: cover;
-}
-
-.photoPlaceholder {
-  width: 100%;
-  aspect-ratio: 3/4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-primary);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--cj-gray-dim);
-  letter-spacing: 0.1em;
-}
-
+/* Nombre (arriba) */
 .nameBlock {
-  padding: 28px 24px;
-  border-top: 1px solid var(--cj-border);
+  padding: 48px 28px 28px;
+  border-bottom: 1px solid var(--cj-border);
 }
 
-.firstName {
+.artistEyebrow {
   font-family: var(--font-primary);
-  font-size: clamp(28px, 4vw, 48px);
-  font-weight: var(--fw-extrabold);
-  letter-spacing: -0.03em;
-  color: var(--cj-white);
-  line-height: 1;
-  margin: 0;
+  font-size: var(--ts-label);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.28em;
   text-transform: uppercase;
+  color: var(--cj-red);
+  margin: 0 0 20px;
 }
 
+.firstName,
 .lastName {
   font-family: var(--font-primary);
-  font-size: clamp(28px, 4vw, 48px);
+  font-size: clamp(40px, 6vw, 72px);
   font-weight: var(--fw-extrabold);
   letter-spacing: -0.03em;
   color: var(--cj-white);
-  line-height: 1;
-  margin: 0 0 12px;
+  line-height: 0.95;
+  margin: 0;
   text-transform: uppercase;
 }
 
@@ -85,47 +60,44 @@
   font-family: var(--font-primary);
   font-size: var(--ts-label);
   font-weight: var(--fw-medium);
-  letter-spacing: 0.3em;
+  letter-spacing: 0.35em;
   text-transform: uppercase;
   color: var(--cj-red);
-  margin: 0;
+  margin: 14px 0 0;
 }
 
-/* ── RIGHT — Bio + quote + CV ─────────────────────────────────── */
+/* Foto (abajo) */
+.photoWrap {
+  flex: 1;
+  border-left: 3px solid var(--cj-red);
+  background: var(--cj-surface);
+  min-height: 300px;
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.photoPlaceholder {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── RIGHT — bio + quote + CV ─────────────────────────────────── */
 .bioCol {
   padding: 64px 56px;
   overflow-y: auto;
 }
 
-@media (max-width: 1200px) {
-  .bioCol { padding: 48px 40px; }
-}
-
-@media (max-width: 900px) {
-  .bioCol { padding: 48px 20px; }
-}
-
-.eyebrow {
-  font-family: var(--font-primary);
-  font-size: var(--ts-label);
-  font-weight: var(--fw-medium);
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--cj-red);
-  margin: 0 0 28px;
-}
-
-.quote {
-  font-family: var(--font-primary);
-  font-size: clamp(16px, 2vw, 20px);
-  font-weight: var(--fw-light);
-  color: var(--cj-white-dim);
-  line-height: 1.7;
-  margin: 0 0 40px;
-  padding: 0 0 0 20px;
-  border-left: 2px solid var(--cj-red);
-  font-style: italic;
-}
+@media (max-width: 1200px) { .bioCol { padding: 48px 40px; } }
+@media (max-width: 900px)  { .bioCol { padding: 48px 20px; } }
 
 .bioText {
   font-family: var(--font-primary);
@@ -133,35 +105,42 @@
   font-weight: var(--fw-light);
   color: var(--cj-white-dim);
   line-height: 1.9;
-  margin-bottom: 48px;
+  margin-bottom: 40px;
 }
-
 .bioText p { margin-bottom: 16px; }
 
+.quote {
+  font-family: var(--font-primary);
+  font-size: clamp(15px, 2vw, 18px);
+  font-weight: var(--fw-light);
+  color: var(--cj-white-dim);
+  line-height: 1.7;
+  margin: 0 0 48px;
+  padding: 0 0 0 20px;
+  border-left: 2px solid var(--cj-red);
+  font-style: italic;
+}
+
 /* ── CV ───────────────────────────────────────────────────────── */
-.cv { margin-top: 48px; }
+.cv { margin-top: 0; }
 
 .cvLabel {
   font-family: var(--font-primary);
   font-size: 10px;
   font-weight: var(--fw-medium);
-  letter-spacing: 0.25em;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--cj-red);
-  margin: 0 0 24px;
+  margin: 0 0 20px;
 }
 
-.cvList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+.cvList { list-style: none; padding: 0; margin: 0; }
 
 .cvItem {
   display: grid;
-  grid-template-columns: 60px 1fr auto;
+  grid-template-columns: 52px 1fr auto;
   gap: 16px;
-  padding: 18px 0;
+  padding: 16px 0;
   border-bottom: 1px solid #1a1a1a;
   align-items: start;
 }
@@ -175,19 +154,17 @@
   padding-top: 1px;
 }
 
-.cvMiddle {}
-
 .cvDesc {
   font-family: var(--font-primary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
   color: var(--cj-white-dim);
-  margin: 0 0 3px;
+  margin: 0 0 2px;
 }
 
 .cvLoc {
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 400;
   color: var(--cj-gray);
   margin: 0;
