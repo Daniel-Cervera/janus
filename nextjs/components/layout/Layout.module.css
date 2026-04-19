@@ -1,12 +1,13 @@
 /* components/layout/Layout.module.css */
 
-/* ── Header — estrictamente estático, sin blur ───────────────────── */
+/* ── Header ──────────────────────────────────────────────────── */
 .header {
   position: sticky;
   top: 0;
-  z-index: var(--z-nav, 100);
+  z-index: var(--z-nav);
   background: var(--cj-black);
   border-bottom: 1px solid var(--cj-border);
+  /* Sin backdrop-filter, sin blur, sin transición de background */
 }
 
 .nav {
@@ -19,53 +20,59 @@
   margin: 0 auto;
 }
 
-/* ── Logo ────────────────────────────────────────────────────────── */
+/* ── Logo ─────────────────────────────────────────────────────── */
 .logo {
   font-family: var(--font-primary);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--cj-white);
   text-decoration: none;
+  flex-shrink: 0;
 }
 
 .logoAccent {
   color: var(--cj-red);
 }
 
-/* ── Nav links ───────────────────────────────────────────────────── */
+/* ── Nav links ────────────────────────────────────────────────── */
 .navLinks {
   display: flex;
   list-style: none;
-  gap: 32px;
+  gap: 36px;
   padding: 0;
   margin: 0;
+  /* Centrado entre logo y carrito */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .navLink {
   font-family: var(--font-primary);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--cj-gray);
   text-decoration: none;
-  padding-bottom: 2px;
+  padding-bottom: 3px;
   border-bottom: 1px solid transparent;
   transition: color var(--dur-base), border-color var(--dur-base);
+  white-space: nowrap;
 }
 
 .navLink:hover {
-  color: var(--cj-red);
+  color: var(--cj-white-dim);
 }
 
 .navLinkActive {
-  color: var(--cj-red);
+  color: var(--cj-red) !important;
   border-bottom-color: var(--cj-red);
 }
 
-/* ── Cart button ─────────────────────────────────────────────────── */
+/* ── Cart button ──────────────────────────────────────────────── */
 .cartBtn {
   position: relative;
   background: transparent;
@@ -78,7 +85,7 @@
   justify-content: center;
   cursor: pointer;
   transition: color var(--dur-base), border-color var(--dur-base);
-  font-size: 16px;
+  flex-shrink: 0;
 }
 
 .cartBtn:hover {
@@ -96,18 +103,18 @@
   color: var(--cj-white);
   font-family: var(--font-primary);
   font-size: 9px;
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* ── Footer ──────────────────────────────────────────────────────── */
+/* ── Footer ───────────────────────────────────────────────────── */
 .footer {
   border-top: 1px solid var(--cj-border);
-  padding: 48px 32px;
-  margin-top: 100px;
+  padding: 40px 32px;
+  margin-top: 80px;
 }
 
 .footerInner {
@@ -117,28 +124,32 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: 20px;
 }
 
 .footerLogo {
   font-family: var(--font-primary);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: var(--fw-bold);
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--cj-white);
   margin: 0;
 }
 
+.footerLogoAccent {
+  color: var(--cj-red);
+}
+
 .footerLinks {
   display: flex;
-  gap: 24px;
+  gap: 28px;
 }
 
 .footerLink {
   font-family: var(--font-primary);
   font-size: 11px;
-  font-weight: 400;
+  font-weight: var(--fw-regular);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--cj-gray);
@@ -157,19 +168,23 @@
   margin: 0;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-  .nav {
-    padding: 0 20px;
-  }
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
   .navLinks {
     display: none;
   }
-  .footer {
-    padding: 48px 20px;
+  .nav {
+    /* Sin links, logo izq y carrito der */
+    position: relative;
   }
+}
+
+@media (max-width: 640px) {
+  .nav { padding: 0 20px; }
+  .footer { padding: 40px 20px; margin-top: 60px; }
   .footerInner {
     flex-direction: column;
-    text-align: center;
+    align-items: flex-start;
+    gap: 16px;
   }
 }

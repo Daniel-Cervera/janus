@@ -1,0 +1,42 @@
+/* components/ui/AvailabilityBadge.module.css */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-primary);
+  font-size: var(--ts-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 2px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Estados */
+.available {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
+
+.reserved {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+.sold {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.nfs {
+  background: rgba(107, 114, 128, 0.12);
+  color: #6b7280;
+}
