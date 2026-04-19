@@ -44,8 +44,16 @@ services:
       - HOST=postgres
       - USER=${POSTGRES_USER:-odoo}
       - PASSWORD=${POSTGRES_PASSWORD}
+      - DB=${POSTGRES_DB:-casajanus}
+      - CASA_JANUS_API_TOKEN=${CASA_JANUS_API_TOKEN}
+      - CASA_JANUS_CF_IMAGES_BASE_URL=${CF_IMAGES_BASE_URL}
+      - CASA_JANUS_CF_ACCOUNT_ID=${CF_ACCOUNT_ID}
+      - CASA_JANUS_CF_IMAGES_API_TOKEN=${CF_IMAGES_API_TOKEN}
+      - CASA_JANUS_NEXTJS_BASE_URL=${NEXTJS_BASE_URL:-http://nextjs:3000}
+      - CASA_JANUS_NEXTJS_REVALIDATE_TOKEN=${NEXTJS_REVALIDATE_TOKEN}
     volumes:
       - ./odoo/addons:/mnt/extra-addons
+      - ./scripts:/mnt/scripts
       - odoo_data:/var/lib/odoo
     ports:
       - "8069:8069"
@@ -55,7 +63,8 @@ services:
       test: [ "CMD-SHELL", "curl -sf http://localhost:8069/web/health || exit 1" ]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 10
+      start_period: 60s
     networks:
       - casajanus_net
 

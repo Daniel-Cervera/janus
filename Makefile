@@ -46,6 +46,7 @@ shell-db:
 
 init-odoo:
 	docker compose exec odoo bash /mnt/scripts/init_odoo.sh
+	docker compose restart odoo
 
 update-module:
 	docker compose exec odoo odoo \
