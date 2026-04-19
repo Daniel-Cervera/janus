@@ -86,6 +86,7 @@ services:
       ODOO_DB: ${POSTGRES_DB:-casajanus}
       ODOO_API_TOKEN: ${CASA_JANUS_API_TOKEN}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXT_PUBLIC_CF_IMAGES_BASE: ${CF_IMAGES_BASE_URL}
     volumes:
       - ./nextjs:/app
       - nextjs_node_modules:/app/node_modules
