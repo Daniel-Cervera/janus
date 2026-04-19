@@ -10,3 +10,5 @@ nextjs/node_modules/
 .DS_Store
 Thumbs.db
 .ai_docs/
+# Odoo conf contiene secretos — usar variables de entorno Docker
+odoo/odoo.conf

@@ -182,6 +182,8 @@ class CasaJanusExhibition(models.Model):
         selection=[('upcoming', 'Próxima'), ('active', 'En curso'), ('past', 'Pasada')],
         string='Estado',
         compute='_compute_state',
+        store=True,
+        index=True,
     )
 
     description     = fields.Html(string='Descripción', sanitize=True)
@@ -207,7 +209,7 @@ class CasaJanusExhibition(models.Model):
             else:
                 rec.state = 'active'
 
-    def api_dict(self):
+    def api_dict(self, include_artworks=False):
         guest_artists = []
         for ea in self.exhibition_artist_ids:
             guest_artists.append({
@@ -218,7 +220,7 @@ class CasaJanusExhibition(models.Model):
                 'photo_url': ea.artist_id._build_cf_url(ea.artist_id.photo_cf_image_id, 'thumb'),
             })
 
-        return {
+        result = {
             'id':          self.id,
             'name':        self.name,
             'slug':        self.slug or '',
@@ -236,6 +238,16 @@ class CasaJanusExhibition(models.Model):
             'guest_artists': guest_artists,
             'artwork_count': len(self.artwork_ids),
         }
+        if include_artworks:
+            result['artworks'] = [a.api_dict() for a in self.artwork_ids]
+        return result
+
+    @api.model
+    def _cron_update_exhibition_states(self):
+        """Fuerza el recalculo diario de 'state' (depende de la fecha de hoy)."""
+        exhibitions = self.search([('active', '=', True)])
+        self.env.add_to_compute(self._fields['state'], exhibitions)
+        self.env.flush_all()
 
 # ── Artista por Exposición ────────────────────────────────────────────────────
 EXHIBITION_ARTIST_ROLES = [
@@ -300,13 +312,11 @@ class CasaJanusCommission(models.Model):
         return records
 
     def _create_crm_lead(self):
-        if not self.env['ir.model'].sudo().search([('model', '=', 'crm.lead')], limit=1):
-            return
-
         artworks_text = ''
         if self.selected_artwork_ids:
-            artworks_text = '\n\nObras de interés:\n' + '\n'.join(f'- {a.name} ({a.year})' for a in self.selected_artwork_ids)
-
+            artworks_text = '\n\nObras de interés:\n' + '\n'.join(
+                f'- {a.name} ({a.year})' for a in self.selected_artwork_ids
+            )
         lead = self.env['crm.lead'].sudo().create({
             'name':         f'Encargo web: {self.partner_name}',
             'contact_name': self.partner_name,

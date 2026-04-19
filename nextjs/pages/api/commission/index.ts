@@ -31,6 +31,16 @@ const MAX_REQ = 3       // 3 intentos por ventana
 
 const ipWindows = new Map<string, number[]>()
 
+// Limpia entradas expiradas cada 5 minutos para evitar memory leak
+setInterval(() => {
+  const now = Date.now()
+  for (const [ip, hits] of ipWindows.entries()) {
+    const fresh = hits.filter(t => now - t < WINDOW_MS)
+    if (fresh.length === 0) ipWindows.delete(ip)
+    else ipWindows.set(ip, fresh)
+  }
+}, 5 * 60 * 1_000).unref()
+
 function isRateLimited(ip: string): boolean {
   const now = Date.now()
   const hits = (ipWindows.get(ip) ?? []).filter(t => now - t < WINDOW_MS)

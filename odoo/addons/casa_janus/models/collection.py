@@ -23,6 +23,10 @@ class CasaJanusCollection(models.Model):
     artwork_ids = fields.One2many('casa_janus.artwork', 'collection_id', string='Obras')
     artwork_count = fields.Integer(string='Núm. obras', compute='_compute_artwork_count')
 
+    _sql_constraints = [
+        ('slug_unique', 'UNIQUE(slug)', 'El slug de colección debe ser único.'),
+    ]
+
     @api.depends('artwork_ids')
     def _compute_artwork_count(self):
         for rec in self:

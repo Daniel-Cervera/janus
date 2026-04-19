@@ -48,16 +48,33 @@
     max-height: 95vh;
     overflow-y: auto;
   }
+
+  /* T-04: panel de imagen menos alto en pantallas pequeñas */
+  .imagePanel {
+    min-height: 220px;
+    max-height: 45vh;
+    padding: 16px;
+  }
+
+  /* T-05: mover botones de navegación dentro del flujo del panel imagen */
+  .navBtns {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    justify-content: center;
+    padding: 8px 0 0;
+    order: 10;
+  }
 }
 
 /* ── Botón cerrar ────────────────────────────────────────────────────── */
 .closeBtn {
   position: absolute;
-  top: 14px;
-  right: 16px;
+  top: 10px;
+  right: 10px;
   z-index: 10;
-  width: 32px;
-  height: 32px;
+  width: 44px;   /* T-02: mínimo 44px para touch target WCAG */
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,8 +98,8 @@
 }
 
 .navBtn {
-  width: 30px;
-  height: 30px;
+  width: 44px;   /* T-03: mínimo 44px para touch target WCAG */
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -17,6 +17,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useRouter } from 'next/router'
 import { cfImageUrl } from '@/lib/odoo-client'
 import { useCartStore } from '@/store/cartStore'
 import type { ArtworkDetail, PrintProduct } from '@/lib/types'
@@ -256,6 +257,7 @@ function ArtworkInfo({
   onTogglePrints: () => void
   onClose: () => void
 }) {
+  const router = useRouter()
   const { addItem, getItem, openCart } = useCartStore()
   const hasPrints = (artwork.prints?.length ?? 0) > 0
 
@@ -334,7 +336,7 @@ function ArtworkInfo({
             className={styles.btnPrimary}
             onClick={() => {
               onClose()
-              window.location.href = `/encargos?ref=${artwork.slug}`
+              router.push(`/encargos?ref=${artwork.slug}`)
             }}
           >
             Adquirir obra original

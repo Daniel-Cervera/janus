@@ -22,7 +22,7 @@ class CasaJanusArtwork(models.Model):
     year = fields.Integer(string='Año', required=True)
     sequence = fields.Integer(string='Orden en colección', default=10)
     active = fields.Boolean(string='Activa', default=True)
-    is_featured = fields.Boolean(string='Destacada', default=False)
+    is_featured = fields.Boolean(string='Destacada', default=False, index=True)
 
     # ── Vínculo con el Artista (NUEVO) ───────────────────────────────────────
     artist_id = fields.Many2one(
@@ -54,7 +54,7 @@ class CasaJanusArtwork(models.Model):
     # ── Comercial ────────────────────────────────────────────────────────────
     price = fields.Float(string='Precio', digits=(10, 2), tracking=True)
     currency_id = fields.Many2one('res.currency', string='Moneda', default=lambda self: self.env.ref('base.USD').id)
-    availability = fields.Selection(selection=AVAILABILITY, string='Disponibilidad', default='available', required=True, tracking=True)
+    availability = fields.Selection(selection=AVAILABILITY, string='Disponibilidad', default='available', required=True, tracking=True, index=True)
     product_tmpl_id = fields.Many2one('product.template', string='Producto Odoo', ondelete='set null')
 
     # ── Imágenes (Cloudflare) ────────────────────────────────────────────────
@@ -83,7 +83,13 @@ class CasaJanusArtwork(models.Model):
                 raise ValidationError(f'El slug "{rec.slug}" no es válido. Usa solo letras minúsculas, números y guiones.')
 
     def api_dict(self, detail=False):
-        primary_url = self._build_cf_url(self.primary_cf_image_id)
+        base_url = self.env['ir.config_parameter'].sudo().get_param(
+            'casa_janus.cloudflare_images_base_url', ''
+        ).rstrip('/')
+
+        def _cf_url(cf_id, variant='public'):
+            return f'{base_url}/{cf_id}/{variant}' if cf_id and base_url else None
+
         result = {
             'id': self.id,
             'name': self.name,
@@ -115,10 +121,10 @@ class CasaJanusArtwork(models.Model):
             'is_featured': self.is_featured,
             'primary_image': {
                 'cf_id': self.primary_cf_image_id or '',
-                'url': primary_url,
-                'url_thumb': self._build_cf_url(self.primary_cf_image_id, 'thumb'),
-                'url_medium': self._build_cf_url(self.primary_cf_image_id, 'medium'),
-                'url_large': self._build_cf_url(self.primary_cf_image_id, 'large'),
+                'url': _cf_url(self.primary_cf_image_id),
+                'url_thumb': _cf_url(self.primary_cf_image_id, 'thumb'),
+                'url_medium': _cf_url(self.primary_cf_image_id, 'medium'),
+                'url_large': _cf_url(self.primary_cf_image_id, 'large'),
             },
             'seo': {
                 'title': self.meta_title or self.name,
@@ -140,7 +146,7 @@ class CasaJanusArtwork(models.Model):
             'height_cm': self.height_cm,
             'depth_cm': self.depth_cm or None,
             'label': ' × '.join(parts) + ' cm' if parts else '',
-            'aspect_ratio': round(self.height_cm / self.width_cm, 4) if self.width_cm else 1.0,
+            'aspect_ratio': round(self.height_cm / self.width_cm, 4) if self.width_cm and self.width_cm > 0 else 1.0,
         }
 
 class CasaJanusArtworkImage(models.Model):

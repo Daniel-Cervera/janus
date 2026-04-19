@@ -39,15 +39,17 @@ def require_api_token(func):
     return wrapper
 
 
-def _json_response(data, status=200):
+def _json_response(data, status=200, cacheable=True):
+    headers = {'Access-Control-Allow-Origin': '*'}
+    if cacheable and status < 300:
+        headers['Cache-Control'] = 'public, max-age=300'
+    else:
+        headers['Cache-Control'] = 'no-store'
     return Response(
         json.dumps(data, ensure_ascii=False, default=str),
         status=status,
         mimetype='application/json',
-        headers={
-            'Access-Control-Allow-Origin': '*',
-            'Cache-Control': 'public, max-age=300',  # 5 min cache en Cloudflare
-        },
+        headers=headers,
     )
 
 
@@ -75,14 +77,19 @@ class CasaJanusAPI(http.Controller):
             [('active', '=', True)],
             order='sequence, name',
         )
-        data = []
-        for t in techniques:
-            t_dict = t.api_dict()
-            if with_collections:
-                t_dict['collections'] = [
-                    c.api_dict() for c in t.collection_ids.filtered('active')
-                ]
-            data.append(t_dict)
+        data = [t.api_dict() for t in techniques]
+
+        if with_collections:
+            from collections import defaultdict
+            active_cols = request.env['casa_janus.collection'].sudo().search(
+                [('technique_id', 'in', techniques.ids), ('active', '=', True)],
+                order='sequence, name',
+            )
+            by_tech = defaultdict(list)
+            for col in active_cols:
+                by_tech[col.technique_id.id].append(col.api_dict())
+            for t_dict in data:
+                t_dict['collections'] = by_tech.get(t_dict['id'], [])
 
         return _json_response({'data': data, 'total': len(data)})
 
@@ -259,7 +266,92 @@ class CasaJanusAPI(http.Controller):
 
     # ── /api/v1/commission  (POST) ──────────────────────────────────────────
 
+    # ── /api/v1/order  (POST) ────────────────────────────────────────────────
+
+    @http.route(f'{API_PREFIX}/order', type='http', auth='public', methods=['POST', 'OPTIONS'], csrf=False)
+    @require_api_token
+    def create_print_order(self, **kwargs):
+        """Crea un pedido de venta (sale.order) por prints desde el frontend."""
+        if request.httprequest.method == 'OPTIONS':
+            return Response(
+                status=200,
+                headers={
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                },
+            )
+
+        try:
+            body = request.httprequest.get_data(as_text=True)
+            data = json.loads(body) if body else {}
+        except json.JSONDecodeError:
+            return _json_error('Invalid JSON body', 400)
+
+        buyer = data.get('buyer', {})
+        items = data.get('items', [])
+
+        # Validación básica
+        if not buyer.get('name') or not buyer.get('email') or not items:
+            return _json_error({'validation': 'buyer (name, email) y items son requeridos'}, 422)
+
+        # Buscar o crear partner
+        Partner = request.env['res.partner'].sudo()
+        partner = Partner.search([('email', '=', buyer['email'].strip().lower())], limit=1)
+        if not partner:
+            partner = Partner.create({
+                'name': buyer['name'].strip(),
+                'email': buyer['email'].strip().lower(),
+                'phone': buyer.get('phone', '').strip() or False,
+                'customer_rank': 1,
+            })
+
+        # Crear sale.order
+        order = request.env['sale.order'].sudo().create({
+            'partner_id': partner.id,
+            'note': data.get('notes', '') or '',
+            'origin': 'Casa Janus Web',
+            'client_order_ref': 'Web — Prints',
+        })
+
+        # Crear líneas por cada item
+        for item in items:
+            raw_pid = item.get('product_id')
+            if not raw_pid:
+                continue
+            try:
+                pid = int(raw_pid)
+            except (TypeError, ValueError):
+                continue
+            product = request.env['product.product'].sudo().browse(pid)
+            if not product.exists():
+                continue
+            line_name = '{artwork} — {size} · {paper}'.format(
+                artwork=item.get('artwork_name', ''),
+                size=item.get('size_label', ''),
+                paper=item.get('paper_label', ''),
+            )
+            request.env['sale.order.line'].sudo().create({
+                'order_id': order.id,
+                'product_id': product.id,
+                'product_uom_qty': max(int(item.get('quantity', 1)), 1),
+                'price_unit': float(item.get('unit_price', 0)),
+                'name': line_name,
+            })
+
+        _logger.info('New print order %s from %s', order.name, buyer.get('email'))
+
+        return _json_response({
+            'success': True,
+            'order_id': order.id,
+            'order_name': order.name,
+            'total': order.amount_total,
+        }, status=201, cacheable=False)
+
+    # ── /api/v1/commission  (POST) ──────────────────────────────────────────
+
     @http.route(f'{API_PREFIX}/commission', type='http', auth='public', methods=['POST', 'OPTIONS'], csrf=False)
+    @require_api_token
     def submit_commission(self, **kwargs):
         if request.httprequest.method == 'OPTIONS':
             return Response(
@@ -311,4 +403,4 @@ class CasaJanusAPI(http.Controller):
             'success': True,
             'message': 'Tu solicitud ha sido recibida. Te contactaremos pronto.',
             'id': commission.id,
-        }, status=201)
+        }, status=201, cacheable=False)

@@ -16,6 +16,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getArtwork } from '@/lib/odoo-client'
+import { getMockArtworkDetail } from '@/lib/mocks'
 
 export default async function handler(
   req: NextApiRequest,
@@ -32,6 +33,13 @@ export default async function handler(
   }
 
   try {
+    // Mock mode
+    if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+      const mockArtwork = getMockArtworkDetail(slug)
+      if (!mockArtwork) return res.status(404).json({ error: 'Artwork not found' })
+      return res.status(200).json({ data: mockArtwork })
+    }
+
     const artwork = await getArtwork(slug)
 
     if (!artwork) {
