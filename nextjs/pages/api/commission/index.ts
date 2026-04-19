@@ -21,33 +21,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
-
-// ── Rate Limiter (sliding window, en memoria) ─────────────────────────────────
-// Para producción: reemplazar por @upstash/ratelimit con Redis
-// El patrón de interfaz es idéntico — solo cambiar la implementación.
-
-const WINDOW_MS = 60_000  // 1 minuto
-const MAX_REQ = 3       // 3 intentos por ventana
-
-const ipWindows = new Map<string, number[]>()
-
-// Limpia entradas expiradas cada 5 minutos para evitar memory leak
-setInterval(() => {
-  const now = Date.now()
-  for (const [ip, hits] of ipWindows.entries()) {
-    const fresh = hits.filter(t => now - t < WINDOW_MS)
-    if (fresh.length === 0) ipWindows.delete(ip)
-    else ipWindows.set(ip, fresh)
-  }
-}, 5 * 60 * 1_000).unref()
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const hits = (ipWindows.get(ip) ?? []).filter(t => now - t < WINDOW_MS)
-  if (hits.length >= MAX_REQ) return true
-  ipWindows.set(ip, [...hits, now])
-  return false
-}
+import { isRateLimited, getClientIp } from '@/lib/rate-limiter'
 
 // ── Schema Zod ────────────────────────────────────────────────────────────────
 // Validación + sanitización + coerción de tipos en un solo paso.
@@ -115,7 +89,7 @@ type CommissionInput = z.infer<typeof CommissionSchema>
 
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY
-  if (!secret) return true  // omitir si no está configurado
+  if (!secret) return false
 
   const res = await fetch(
     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
@@ -127,17 +101,6 @@ async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   )
   const data = await res.json()
   return data.success === true
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function getClientIp(req: NextApiRequest): string {
-  return (
-    (req.headers['cf-connecting-ip'] as string)      // IP real via Cloudflare
-    ?? (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
-    ?? req.socket?.remoteAddress
-    ?? 'unknown'
-  )
 }
 
 function odooUrl(path: string): string {
@@ -163,7 +126,7 @@ export default async function handler(
   const ip = getClientIp(req)
 
   // ── Capa 1: Rate limiting ─────────────────────────────────────────────────
-  if (isRateLimited(ip)) {
+  if (await isRateLimited(ip, 3)) {
     return res.status(429).json({
       error: 'Demasiadas solicitudes. Por favor espera un momento.',
     })
@@ -190,8 +153,13 @@ export default async function handler(
   }
 
   // ── Capa 4: Turnstile ─────────────────────────────────────────────────────
-  if (process.env.TURNSTILE_SECRET_KEY && data.cf_turnstile_token) {
-    const valid = await verifyTurnstile(data.cf_turnstile_token, ip)
+  const isProd = process.env.NODE_ENV === 'production'
+  if (isProd && !process.env.TURNSTILE_SECRET_KEY) {
+    console.error('[commission] TURNSTILE_SECRET_KEY no configurada en producción')
+    return res.status(503).json({ error: 'Servicio temporalmente no disponible.' })
+  }
+  if (process.env.TURNSTILE_SECRET_KEY) {
+    const valid = await verifyTurnstile(data.cf_turnstile_token ?? '', ip)
     if (!valid) {
       return res.status(403).json({ error: 'Verificación de seguridad fallida.' })
     }

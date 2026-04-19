@@ -12,6 +12,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
+import { isRateLimited, getClientIp } from '@/lib/rate-limiter'
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -40,28 +41,6 @@ const CheckoutSchema = z.object({
     notes: z.string().max(500).optional(),
 })
 
-// ── Rate limiter ──────────────────────────────────────────────────────────────
-
-const ipHits = new Map<string, number[]>()
-
-// Limpia entradas expiradas cada 5 minutos para evitar memory leak
-setInterval(() => {
-    const now = Date.now()
-    for (const [ip, hits] of ipHits.entries()) {
-        const fresh = hits.filter(t => now - t < 60_000)
-        if (fresh.length === 0) ipHits.delete(ip)
-        else ipHits.set(ip, fresh)
-    }
-}, 5 * 60 * 1_000).unref()
-
-function isRateLimited(ip: string): boolean {
-    const now = Date.now()
-    const hits = (ipHits.get(ip) ?? []).filter(t => now - t < 60_000)
-    if (hits.length >= 5) return true
-    ipHits.set(ip, [...hits, now])
-    return false
-}
-
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export default async function handler(
@@ -72,11 +51,9 @@ export default async function handler(
         return res.status(405).json({ error: 'Método no permitido.' })
     }
 
-    const ip = (req.headers['cf-connecting-ip'] as string)
-        ?? (req.headers['x-forwarded-for'] as string)?.split(',')[0]
-        ?? 'unknown'
+    const ip = getClientIp(req)
 
-    if (isRateLimited(ip)) {
+    if (await isRateLimited(ip, 5)) {
         return res.status(429).json({ error: 'Demasiadas solicitudes.' })
     }
 

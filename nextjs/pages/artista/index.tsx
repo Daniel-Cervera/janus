@@ -8,6 +8,14 @@ interface ArtistaProps {
   artist: Artist | null
 }
 
+function stripUnsafeTags(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+    .replace(/\son\w+="[^"]*"/gi, '')
+    .replace(/\son\w+='[^']*'/gi, '')
+}
+
 function sanitizeForNextJs(obj: any): any {
   if (obj === null || typeof obj !== 'object') return obj ?? null
   if (Array.isArray(obj)) return obj.map(sanitizeForNextJs)
@@ -127,6 +135,7 @@ export const getStaticProps: GetStaticProps<ArtistaProps> = async () => {
 
     const safeArtist = {
       ...artist,
+      biography_html: stripUnsafeTags(artist.biography_html || artist.biography || ''),
       cv_items: Array.isArray(artist.cv_items)
         ? artist.cv_items.map((item: any) => ({
           ...item,

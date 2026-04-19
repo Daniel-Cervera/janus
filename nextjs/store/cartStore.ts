@@ -145,7 +145,8 @@ export const useCartStore = create<CartState>()(
                 if (!state) return
                 const age = Date.now() - (state._persistedAt ?? 0)
                 if (age > CART_TTL_MS) {
-                    state.clearCart()
+                    state.items = []
+                    state.isOpen = false
                 }
             },
         }

@@ -13,6 +13,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
 import xmlrpc from 'xmlrpc'
+import { isRateLimited, getClientIp } from '@/lib/rate-limiter'
 
 // ── Validación ────────────────────────────────────────────────────────────────
 
@@ -32,17 +33,6 @@ const LeadSchema = z.object({
 
 type LeadInput = z.infer<typeof LeadSchema>
 
-// ── Rate limiter ──────────────────────────────────────────────────────────────
-
-const ipHits = new Map<string, number[]>()
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const hits = (ipHits.get(ip) ?? []).filter(t => now - t < 60_000)
-  if (hits.length >= 3) return true
-  ipHits.set(ip, [...hits, now])
-  return false
-}
-
 // ── Odoo XML-RPC ──────────────────────────────────────────────────────────────
 
 function xmlrpcCall<T>(client: xmlrpc.Client, method: string, params: unknown[]): Promise<T> {
@@ -57,8 +47,9 @@ function xmlrpcCall<T>(client: xmlrpc.Client, method: string, params: unknown[])
 async function createOdooLead(data: LeadInput): Promise<number> {
   const odooUrl = process.env.ODOO_URL ?? 'http://localhost:8069'
   const db = process.env.ODOO_DB ?? 'casajanus'
-  const user = process.env.ODOO_USERNAME ?? 'admin'
-  const pass = process.env.ODOO_PASSWORD ?? 'admin'
+  const user = process.env.ODOO_USERNAME
+  const pass = process.env.ODOO_PASSWORD
+  if (!user || !pass) throw new Error('ODOO_USERNAME / ODOO_PASSWORD no configurados')
 
   const isSSL = odooUrl.startsWith('https')
   const mk = isSSL ? xmlrpc.createSecureClient : xmlrpc.createClient
@@ -90,11 +81,9 @@ async function createOdooLead(data: LeadInput): Promise<number> {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido.' })
 
-  const ip = (req.headers['cf-connecting-ip'] as string)
-    ?? (req.headers['x-forwarded-for'] as string)?.split(',')[0]
-    ?? 'unknown'
+  const ip = getClientIp(req)
 
-  if (isRateLimited(ip)) return res.status(429).json({ error: 'Demasiadas solicitudes.' })
+  if (await isRateLimited(ip, 3)) return res.status(429).json({ error: 'Demasiadas solicitudes.' })
 
   const parsed = LeadSchema.safeParse(req.body)
   if (!parsed.success) {

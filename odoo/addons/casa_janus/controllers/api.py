@@ -9,6 +9,7 @@ Autenticación: token Bearer en header Authorization
 import json
 import logging
 import functools
+import os
 
 from odoo import http
 from odoo.http import request, Response
@@ -16,6 +17,35 @@ from odoo.http import request, Response
 _logger = logging.getLogger(__name__)
 
 API_PREFIX = '/api/v1'
+
+# Orígenes permitidos para CORS.
+# Nunca '*' — solo Next.js (interno Docker) y el dominio público.
+_ALLOWED_ORIGINS = {
+    o.strip()
+    for o in os.environ.get(
+        'CASA_JANUS_CORS_ORIGINS',
+        'http://nextjs:3000,http://localhost:3000',
+    ).split(',')
+    if o.strip()
+}
+
+
+def _cors_origin() -> str:
+    """Devuelve el Origin del request si está en la lista de permitidos, si no ''."""
+    origin = request.httprequest.headers.get('Origin', '')
+    return origin if origin in _ALLOWED_ORIGINS else ''
+
+
+def _preflight(methods: str, extra_headers: str = 'Authorization') -> Response:
+    origin = _cors_origin()
+    headers = {
+        'Access-Control-Allow-Methods': methods,
+        'Access-Control-Allow-Headers': extra_headers,
+        'Vary': 'Origin',
+    }
+    if origin:
+        headers['Access-Control-Allow-Origin'] = origin
+    return Response(status=200, headers=headers)
 
 
 def require_api_token(func):
@@ -40,7 +70,11 @@ def require_api_token(func):
 
 
 def _json_response(data, status=200, cacheable=True):
-    headers = {'Access-Control-Allow-Origin': '*'}
+    origin = _cors_origin()
+    headers = {}
+    if origin:
+        headers['Access-Control-Allow-Origin'] = origin
+        headers['Vary'] = 'Origin'
     if cacheable and status < 300:
         headers['Cache-Control'] = 'public, max-age=300'
     else:
@@ -54,11 +88,16 @@ def _json_response(data, status=200, cacheable=True):
 
 
 def _json_error(message, status=400):
+    origin = _cors_origin()
+    headers = {'Cache-Control': 'no-store'}
+    if origin:
+        headers['Access-Control-Allow-Origin'] = origin
+        headers['Vary'] = 'Origin'
     return Response(
         json.dumps({'error': message}),
         status=status,
         mimetype='application/json',
-        headers={'Access-Control-Allow-Origin': '*'},
+        headers=headers,
     )
 
 
@@ -70,7 +109,7 @@ class CasaJanusAPI(http.Controller):
     @require_api_token
     def list_techniques(self, **kwargs):
         if request.httprequest.method == 'OPTIONS':
-            return Response(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization'})
+            return _preflight('GET, OPTIONS')
         
         with_collections = kwargs.get('with_collections', '').lower() == 'true'
         techniques = request.env['casa_janus.technique'].sudo().search(
@@ -99,7 +138,7 @@ class CasaJanusAPI(http.Controller):
     @require_api_token
     def list_collections(self, **kwargs):
         if request.httprequest.method == 'OPTIONS':
-            return Response(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization'})
+            return _preflight('GET, OPTIONS')
             
         domain = [('active', '=', True)]
 
@@ -129,7 +168,7 @@ class CasaJanusAPI(http.Controller):
     @require_api_token
     def list_artworks(self, **kwargs):
         if request.httprequest.method == 'OPTIONS':
-            return Response(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization'})
+            return _preflight('GET, OPTIONS')
             
         domain = [('active', '=', True)]
 
@@ -203,7 +242,7 @@ class CasaJanusAPI(http.Controller):
     @require_api_token
     def get_artwork(self, slug, **kwargs):
         if request.httprequest.method == 'OPTIONS':
-            return Response(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization'})
+            return _preflight('GET, OPTIONS')
             
         artwork = request.env['casa_janus.artwork'].sudo().search(
             [('slug', '=', slug), ('active', '=', True)], limit=1
@@ -218,7 +257,7 @@ class CasaJanusAPI(http.Controller):
     @require_api_token
     def get_artist(self, **kwargs):
         if request.httprequest.method == 'OPTIONS':
-            return Response(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization'})
+            return _preflight('GET, OPTIONS')
             
         artist = request.env['casa_janus.artist'].sudo().search(
             [('is_main_artist', '=', True)], limit=1
@@ -233,7 +272,7 @@ class CasaJanusAPI(http.Controller):
     @require_api_token
     def list_exhibitions(self, **kwargs):
         if request.httprequest.method == 'OPTIONS':
-            return Response(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization'})
+            return _preflight('GET, OPTIONS')
             
         domain = [('active', '=', True)]
         state = kwargs.get('state', 'all')
@@ -255,7 +294,7 @@ class CasaJanusAPI(http.Controller):
     @require_api_token
     def get_exhibition(self, slug, **kwargs):
         if request.httprequest.method == 'OPTIONS':
-            return Response(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization'})
+            return _preflight('GET, OPTIONS')
             
         exhibition = request.env['casa_janus.exhibition'].sudo().search(
             [('slug', '=', slug), ('active', '=', True)], limit=1
@@ -273,14 +312,7 @@ class CasaJanusAPI(http.Controller):
     def create_print_order(self, **kwargs):
         """Crea un pedido de venta (sale.order) por prints desde el frontend."""
         if request.httprequest.method == 'OPTIONS':
-            return Response(
-                status=200,
-                headers={
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                },
-            )
+            return _preflight('POST, OPTIONS', 'Content-Type, Authorization')
 
         try:
             body = request.httprequest.get_data(as_text=True)
@@ -354,14 +386,7 @@ class CasaJanusAPI(http.Controller):
     @require_api_token
     def submit_commission(self, **kwargs):
         if request.httprequest.method == 'OPTIONS':
-            return Response(
-                status=200,
-                headers={
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type',
-                },
-            )
+            return _preflight('POST, OPTIONS', 'Content-Type')
 
         try:
             body = request.httprequest.get_data(as_text=True)
