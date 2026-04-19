@@ -25,8 +25,14 @@ class CasaJanusTechnique(models.Model):
 
     @api.depends('collection_ids')
     def _compute_collection_count(self):
+        data = self.env['casa_janus.collection'].read_group(
+            [('technique_id', 'in', self.ids)],
+            ['technique_id'],
+            ['technique_id'],
+        )
+        counts = {r['technique_id'][0]: r['technique_id_count'] for r in data}
         for rec in self:
-            rec.collection_count = len(rec.collection_ids)
+            rec.collection_count = counts.get(rec.id, 0)
 
     @api.depends('collection_ids.artwork_ids')
     def _compute_artwork_count(self):

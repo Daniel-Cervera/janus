@@ -1,0 +1,229 @@
+/* pages/tienda/Checkout.module.css */
+
+.page {
+  background: #090909;
+  min-height: 100vh;
+  color: #f4efe9;
+  font-family: "Archivo", sans-serif;
+  padding: 0 0 80px;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.header {
+  padding: 40px 0 32px;
+  border-bottom: 1px solid #2c2c2c;
+  margin-bottom: 48px;
+}
+
+.label {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #c41e1e;
+  margin: 0 0 8px;
+}
+
+.title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 300;
+  font-style: italic;
+  color: #f4efe9;
+  margin: 0;
+  line-height: 1;
+}
+
+/* ── Layout: 2 columnas en desktop ───────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+/* ── Títulos de sección ──────────────────────────────────────────── */
+.sectionTitle {
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6a6560;
+  margin: 0 0 24px;
+}
+
+/* ── Resumen de items ────────────────────────────────────────────── */
+.itemList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.itemImg {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  background: #1a1a1a;
+  flex-shrink: 0;
+}
+
+.itemInfo {
+  flex: 1;
+}
+
+.itemName {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 16px;
+  font-style: italic;
+  color: #f4efe9;
+  margin: 0 0 3px;
+}
+
+.itemMeta {
+  font-size: 11px;
+  color: #6a6560;
+  margin: 0 0 2px;
+}
+
+.itemQty {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #3f3d3a;
+  margin: 0;
+}
+
+.itemPrice {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 18px;
+  color: #f4efe9;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid #2c2c2c;
+}
+
+.totalLabel {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6a6560;
+}
+
+.totalPrice {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 24px;
+  color: #f4efe9;
+}
+
+/* ── Formulario ──────────────────────────────────────────────────── */
+.field {
+  margin-bottom: 20px;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6a6560;
+  margin-bottom: 8px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  background: #111;
+  border: 1px solid #2c2c2c;
+  color: #f4efe9;
+  font-family: "Archivo", sans-serif;
+  font-size: 14px;
+  padding: 12px 14px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #6a6560;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.errorMsg {
+  font-size: 13px;
+  color: #c41e1e;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(196, 30, 30, 0.3);
+  background: rgba(196, 30, 30, 0.06);
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 16px;
+  background: #c41e1e;
+  color: #f4efe9;
+  font-family: "Archivo", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 16px;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: #e02424;
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.disclaimer {
+  font-size: 12px;
+  color: #3f3d3a;
+  line-height: 1.6;
+  margin: 0;
+  text-align: center;
+}

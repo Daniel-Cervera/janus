@@ -306,4 +306,14 @@
   .fabCount {
     display: none;
   }
+
+  /* T-06: secondaryBar apilada en pantallas muy pequeñas */
+  .secondaryBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .availBar {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
 }

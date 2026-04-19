@@ -6,14 +6,16 @@
     'author': 'Casa Janus',
     'category': 'Website/eCommerce',
     'license': 'LGPL-3',
-    'depends': ['base', 'mail', 'website', 'website_sale', 'portal', 'event', 'crm'],
+    'depends': ['base', 'mail', 'sale', 'crm', 'event'],
     'data': [
+        'security/groups.xml',
         'security/ir.model.access.csv',
-        'views/technique_views.xml', # <-- Action is defined here / La acción se define aquí
+        'data/cron.xml',
+        'views/technique_views.xml',
         'views/collection_views.xml',
         'views/artwork_views.xml',
         'views/artist_exhibition_commission_views.xml',
-        'views/menu_views.xml',      # <-- Menus MUST be loaded last / Los menús DEBEN cargarse al final
+        'views/menu_views.xml',
     ],
     'installable': True,
     'auto_install': False,

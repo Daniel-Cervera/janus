@@ -13,23 +13,47 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
 
-// ── Schema ────────────────────────────────────────────────────────────────────
+// ── Schemas ───────────────────────────────────────────────────────────────────
+
+const BuyerSchema = z.object({
+    name: z.string().min(2, 'El nombre es requerido.'),
+    email: z.string().email('Email inválido.'),
+    phone: z.string().optional(),
+})
 
 const CartItemSchema = z.object({
     product_id: z.number().int().positive().nullable(),
     print_id: z.number().int().positive(),
     artwork_id: z.number().int().positive(),
+    artwork_slug: z.string(),
+    artwork_name: z.string(),
+    size_label: z.string(),
+    paper_label: z.string(),
     quantity: z.number().int().min(1).max(99),
     price: z.number().positive(),
+    currency: z.string(),
 })
 
 const CheckoutSchema = z.object({
+    buyer: BuyerSchema,
     items: z.array(CartItemSchema).min(1, 'El carrito está vacío.').max(50),
+    notes: z.string().max(500).optional(),
 })
 
 // ── Rate limiter ──────────────────────────────────────────────────────────────
 
 const ipHits = new Map<string, number[]>()
+
+// Limpia entradas expiradas cada 5 minutos para evitar memory leak
+setInterval(() => {
+    const now = Date.now()
+    for (const [ip, hits] of ipHits.entries()) {
+        const fresh = hits.filter(t => now - t < 60_000)
+        if (fresh.length === 0) ipHits.delete(ip)
+        else ipHits.set(ip, fresh)
+    }
+}, 5 * 60 * 1_000).unref()
+
 function isRateLimited(ip: string): boolean {
     const now = Date.now()
     const hits = (ipHits.get(ip) ?? []).filter(t => now - t < 60_000)
@@ -63,20 +87,30 @@ export default async function handler(
         })
     }
 
-    const { items } = parsed.data
+    const { buyer, items, notes } = parsed.data
     const odooBase = process.env.ODOO_BASE_URL?.replace(/\/$/, '') ?? ''
     const token = process.env.CASA_JANUS_API_TOKEN ?? ''
 
+    // Mapear items del carrito al formato que espera Odoo
+    const orderItems = items.map(item => ({
+        product_id: item.product_id,
+        artwork_slug: item.artwork_slug,
+        artwork_name: item.artwork_name,
+        size_label: item.size_label,
+        paper_label: item.paper_label,
+        quantity: item.quantity,
+        unit_price: item.price,
+        currency: item.currency,
+    }))
+
     try {
-        // Enviar orden de prints a Odoo
-        // El endpoint /api/v1/prints/order debe ser implementado en el módulo Odoo
-        const odooRes = await fetch(`${odooBase}/api/v1/prints/order`, {
+        const odooRes = await fetch(`${odooBase}/api/v1/order`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({ items }),
+            body: JSON.stringify({ buyer, items: orderItems, notes }),
             signal: AbortSignal.timeout(10_000),
         })
 

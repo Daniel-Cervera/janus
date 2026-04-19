@@ -160,6 +160,14 @@
 
 @media (max-width: 480px) { .title { font-size: 13px; } .year { font-size: 9px; } }
 
+/* T-01: en dispositivos táctiles (pointer: coarse) el corazón siempre es visible */
+@media (pointer: coarse) {
+  .heartBtn {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card { animation: none; opacity: 1; }
   .image { transition: none; }
