@@ -276,16 +276,16 @@ function ArtworkInfo({
 
       <motion.div className={styles.metaRow} variants={childVariants}>
         <span className={styles.year}>{artwork.year}</span>
+        {artwork.medium && (
+          <>
+            <span className={styles.metaSep}>·</span>
+            <span className={styles.dims}>{artwork.medium}</span>
+          </>
+        )}
         {artwork.dimensions.label && (
           <>
             <span className={styles.metaSep}>·</span>
             <span className={styles.dims}>{artwork.dimensions.label}</span>
-          </>
-        )}
-        {artwork.edition && (
-          <>
-            <span className={styles.metaSep}>·</span>
-            <span className={styles.edition}>Ed. {artwork.edition}</span>
           </>
         )}
       </motion.div>
@@ -339,7 +339,7 @@ function ArtworkInfo({
               router.push(`/encargos?ref=${artwork.slug}`)
             }}
           >
-            Adquirir obra original
+            CONSULTAR DISPONIBILIDAD
           </button>
         )}
 

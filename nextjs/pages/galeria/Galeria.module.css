@@ -1,42 +1,44 @@
-/* pages/galeria/Galeria.module.css (v2) */
+/* pages/galeria/Galeria.module.css */
 
 .page {
-  background: #090909;
+  background: var(--cj-black);
   min-height: 100vh;
-  color: #f4efe9;
-  font-family: "Archivo", sans-serif;
+  color: var(--cj-white);
+  font-family: var(--font-primary);
 }
 
-/* ── Hero ──────────────────────────────────────────────────────── */
+/* ── Header de página ──────────────────────────────────────────── */
 .hero {
-  background: #111;
-  border-bottom: 1px solid #2c2c2c;
-  padding: 32px 24px 20px;
+  background: var(--cj-black-soft);
+  border-bottom: 1px solid var(--cj-border);
+  padding: 32px 32px 20px;
 }
 
 .heroLabel {
-  font-size: 10px;
+  font-family: var(--font-primary);
+  font-size: var(--ts-label);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #c41e1e;
+  color: var(--cj-red);
   margin: 0 0 6px;
 }
 
 .heroTitle {
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(36px, 6vw, 64px);
-  font-weight: 300;
-  font-style: italic;
-  color: #f4efe9;
+  font-family: var(--font-primary);
+  font-size: var(--ts-page-title);
+  font-weight: var(--fw-extrabold);
+  letter-spacing: -0.03em;
+  color: var(--cj-white);
   line-height: 1;
   margin: 0;
-  letter-spacing: -0.01em;
-  align-items: center;
 }
 
 .heroDesc {
+  font-family: var(--font-primary);
   font-size: 13px;
-  color: #6a6560;
+  font-weight: var(--fw-light);
+  color: var(--cj-gray);
   margin: 10px 0 0;
   line-height: 1.6;
   max-width: 480px;
@@ -44,51 +46,48 @@
 
 /* ── Tabs de técnica ───────────────────────────────────────────── */
 .techniqueTabs {
-  background: #111;
-  border-bottom: 1px solid #2c2c2c;
+  background: var(--cj-black-soft);
+  border-bottom: 1px solid var(--cj-border);
   padding: 0 20px;
   display: flex;
   gap: 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
-.techniqueTabs::-webkit-scrollbar {
-  display: none;
-}
+.techniqueTabs::-webkit-scrollbar { display: none; }
 
 .tab {
   padding: 14px 18px;
+  font-family: var(--font-primary);
   font-size: 11px;
-  letter-spacing: 0.12em;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #6a6560;
+  color: var(--cj-gray);
   background: transparent;
   border: none;
   cursor: pointer;
   border-bottom: 2px solid transparent;
   white-space: nowrap;
-  transition:
-    color 0.2s,
-    border-color 0.2s;
+  transition: color var(--dur-base), border-color var(--dur-base);
   display: flex;
   align-items: center;
   gap: 7px;
 }
-.tab:hover {
-  color: #c6bdb3;
-}
+.tab:hover { color: var(--cj-white-dim); }
 .tabActive {
-  color: #c41e1e !important;
-  border-bottom-color: #c41e1e;
+  color: var(--cj-red) !important;
+  border-bottom-color: var(--cj-red);
 }
 
 .tabCount {
+  font-family: var(--font-primary);
   font-size: 10px;
-  background: rgba(196, 30, 30, 0.12);
-  color: #c41e1e;
+  font-weight: 500;
+  background: var(--cj-red-ghost);
+  color: var(--cj-red);
   padding: 1px 5px;
   border-radius: 2px;
-  font-weight: 500;
   letter-spacing: 0;
 }
 
@@ -105,10 +104,12 @@
 }
 
 .barLabel {
-  font-size: 10px;
+  font-family: var(--font-primary);
+  font-size: var(--ts-label);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #3f3d3a;
+  color: var(--cj-gray-dim);
   flex-shrink: 0;
 }
 
@@ -122,28 +123,25 @@
 
 .pill {
   padding: 4px 12px;
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: var(--fw-medium);
   letter-spacing: 0.08em;
-  border: 1px solid #2c2c2c;
-  color: #6a6560;
+  border: 1px solid var(--cj-border);
+  color: var(--cj-gray);
   background: transparent;
   cursor: pointer;
-  transition:
-    border-color 0.2s,
-    color 0.2s,
-    background 0.2s;
+  transition: border-color var(--dur-base), color var(--dur-base), background var(--dur-base);
   display: flex;
   align-items: center;
   gap: 5px;
+  border-radius: 0;
 }
-.pill:hover {
-  border-color: #6a6560;
-  color: #c6bdb3;
-}
+.pill:hover { border-color: var(--cj-gray); color: var(--cj-white-dim); }
 .pillActive {
-  border-color: #c41e1e;
-  color: #c41e1e;
-  background: rgba(196, 30, 30, 0.08);
+  border-color: var(--cj-red);
+  color: var(--cj-red);
+  background: var(--cj-red-ghost);
 }
 
 .pillCount {
@@ -163,23 +161,23 @@
 
 .filterBtn {
   padding: 3px 10px;
-  font-size: 10px;
+  font-family: var(--font-primary);
+  font-size: var(--ts-label);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   border: 1px solid transparent;
   background: transparent;
-  color: #3f3d3a;
+  color: var(--cj-gray-dim);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--dur-base);
+  border-radius: 0;
 }
-.filterBtn:hover {
-  color: #6a6560;
-  border-color: #2c2c2c;
-}
+.filterBtn:hover { color: var(--cj-gray); border-color: var(--cj-border); }
 .filterBtnActive {
-  color: #c41e1e;
-  border-color: #c41e1e;
-  background: rgba(196, 30, 30, 0.06);
+  color: var(--cj-red);
+  border-color: var(--cj-red);
+  background: var(--cj-red-ghost);
 }
 
 /* ── Barra de resultados ────────────────────────────────────────── */
@@ -192,25 +190,27 @@
 }
 
 .resultsCount {
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #3f3d3a;
+  color: var(--cj-gray-dim);
 }
 
 .clearFilters {
-  font-size: 10px;
+  font-family: var(--font-primary);
+  font-size: var(--ts-label);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #6a6560;
+  color: var(--cj-gray);
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color var(--dur-base);
 }
-.clearFilters:hover {
-  color: #c41e1e;
-}
+.clearFilters:hover { color: var(--cj-red); }
 
 /* ── Estado de filtrado ─────────────────────────────────────────── */
 .filteringState {
@@ -225,19 +225,12 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #c41e1e;
+  background: var(--cj-red);
   animation: dotPulse 1s ease-in-out infinite;
 }
 @keyframes dotPulse {
-  0%,
-  100% {
-    opacity: 0.2;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.2);
-  }
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50%       { opacity: 1; transform: scale(1.2); }
 }
 
 /* ── FAB de selección ───────────────────────────────────────────── */
@@ -245,57 +238,52 @@
   position: fixed;
   bottom: 28px;
   right: 28px;
-  z-index: 200;
+  z-index: var(--z-fab, 150);
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 14px 20px;
-  background: #c41e1e;
-  color: #f4efe9;
+  background: var(--cj-red);
+  color: var(--cj-white);
   border: none;
   cursor: pointer;
-  font-family: "Archivo", sans-serif;
+  font-family: var(--font-primary);
+  font-weight: var(--fw-medium);
   box-shadow: 0 4px 24px rgba(196, 30, 30, 0.4);
-  animation: fabAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-  transition:
-    background 0.2s,
-    transform 0.2s,
-    box-shadow 0.2s;
+  animation: fabAppear 0.4s var(--ease-out) both;
+  transition: background var(--dur-base), transform var(--dur-base), box-shadow var(--dur-base);
+  border-radius: 0;
 }
 .selectionFab:hover {
-  background: #e02424;
+  background: var(--cj-red-bright);
   transform: translateY(-2px);
   box-shadow: 0 8px 32px rgba(196, 30, 30, 0.5);
 }
 
 @keyframes fabAppear {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(16px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .fabCount {
+  font-family: var(--font-primary);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   min-width: 16px;
   text-align: center;
 }
 
 .fabLabel {
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
 @media (max-width: 480px) {
-  .fabLabel {
-    display: none;
-  }
+  .hero { padding: 24px 20px 16px; }
+  .fabLabel { display: none; }
   .selectionFab {
     padding: 14px;
     border-radius: 50%;
@@ -303,17 +291,7 @@
     height: 52px;
     justify-content: center;
   }
-  .fabCount {
-    display: none;
-  }
-
-  /* T-06: secondaryBar apilada en pantallas muy pequeñas */
-  .secondaryBar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .availBar {
-    margin-left: 0;
-    flex-wrap: wrap;
-  }
+  .fabCount { display: none; }
+  .secondaryBar { flex-direction: column; align-items: flex-start; }
+  .availBar { margin-left: 0; flex-wrap: wrap; }
 }

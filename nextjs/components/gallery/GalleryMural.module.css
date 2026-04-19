@@ -7,49 +7,33 @@
 /* ── Barra de conteo ────────────────────────────────────────────────── */
 .countBar {
   padding: 12px 20px;
-  border-bottom: 1px solid #2c2c2c;
+  border-bottom: 1px solid var(--cj-border);
 }
 
 .count {
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #6a6560;
-  font-family: 'Archivo', sans-serif;
+  color: var(--cj-gray);
 }
 
 .countOf {
-  color: #3f3d3a;
+  color: var(--cj-gray-dim);
 }
 
 /* ── Mural masonry ──────────────────────────────────────────────────── */
 .mural {
   padding: 10px;
-
-  /* CSS columns — sin JavaScript de layout */
   columns: 4;
   column-gap: 10px;
 }
 
-@media (max-width: 1400px) {
-  .mural { columns: 4; }
-}
-
-@media (max-width: 1023px) {
-  .mural { columns: 3; }
-}
-
-@media (max-width: 639px) {
-  .mural {
-    columns: 2;
-    column-gap: 6px;
-    padding: 6px;
-  }
-}
-
-@media (min-width: 1600px) {
-  .mural { columns: 5; }
-}
+@media (max-width: 1400px) { .mural { columns: 4; } }
+@media (max-width: 1023px) { .mural { columns: 3; } }
+@media (max-width: 639px)  { .mural { columns: 2; column-gap: 6px; padding: 6px; } }
+@media (min-width: 1600px) { .mural { columns: 5; } }
 
 /* ── Sentinel y skeletons ───────────────────────────────────────────── */
 .sentinel {
@@ -64,19 +48,11 @@
   padding: 0 0 10px;
 }
 
-@media (max-width: 1023px) {
-  .loadingRow { grid-template-columns: repeat(3, 1fr); }
-}
-
-@media (max-width: 639px) {
-  .loadingRow {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-  }
-}
+@media (max-width: 1023px) { .loadingRow { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 639px)  { .loadingRow { grid-template-columns: repeat(2, 1fr); gap: 6px; } }
 
 .skeleton {
-  background: #181818;
+  background: var(--cj-surface);
   animation: shimmer 1.6s ease-in-out infinite;
   animation-fill-mode: both;
 }
@@ -93,19 +69,20 @@
 }
 
 .emptyTitle {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 24px;
-  font-style: italic;
+  font-family: var(--font-primary);
+  font-size: 22px;
   font-weight: 300;
-  color: #6a6560;
+  color: var(--cj-gray);
   margin-bottom: 8px;
 }
 
 .emptySubtitle {
+  font-family: var(--font-primary);
   font-size: 12px;
+  font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #3f3d3a;
+  color: var(--cj-gray-dim);
 }
 
 /* ── Marcador de fin ────────────────────────────────────────────────── */
@@ -119,15 +96,15 @@
 .endLine {
   flex: 1;
   height: 1px;
-  background: #2c2c2c;
+  background: var(--cj-border);
 }
 
 .endText {
+  font-family: var(--font-primary);
   font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #3f3d3a;
-  font-family: 'Archivo', sans-serif;
+  color: var(--cj-gray-dim);
   white-space: nowrap;
 }
-

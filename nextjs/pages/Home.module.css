@@ -1,125 +1,84 @@
-/* ── General ─────────────────────────────────────────────────── */
+/* pages/Home.module.css */
+
 .main {
-  background: #090909;
+  background: var(--cj-black);
   min-height: 100vh;
-  color: #f4efe9;
-  font-family: "Archivo", sans-serif;
+  color: var(--cj-white);
+  font-family: var(--font-primary);
 }
 
-/* ── Hero ────────────────────────────────────────────────────── */
-.hero {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 80px 24px;
-  border-bottom: 1px solid #2c2c2c;
-  position: relative;
-}
-
-.heroContent {
-  max-width: 640px;
-}
-
-.heroLabel {
-  font-size: 11px;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: #c41e1e;
-  margin: 0 0 16px;
-}
-
-.heroTitle {
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(56px, 10vw, 100px);
-  font-weight: 300;
-  font-style: italic;
-  color: #f4efe9;
-  line-height: 1;
-  margin: 0 0 24px;
-  letter-spacing: -0.02em;
-}
-
-.heroSub {
-  font-size: 16px;
-  color: #6a6560;
-  line-height: 1.7;
-  margin: 0 0 40px;
-  max-width: 420px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.heroCta {
-  display: inline-block;
-  padding: 16px 40px;
-  background: #c41e1e;
-  color: #f4efe9;
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  text-decoration: none;
-  transition: background 0.2s;
-}
-
-.heroCta:hover {
-  background: #e02424;
-}
-
-/* ── Secciones ───────────────────────────────────────────────── */
-.sectionHeader {
-  text-align: center;
-  margin-bottom: 48px;
-}
-
+/* ── Labels / Títulos de sección ─────────────────────────────── */
 .sectionLabel {
-  font-size: 10px;
+  font-family: var(--font-primary);
+  font-size: var(--ts-label);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #c41e1e;
+  color: var(--cj-red);
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .sectionTitle {
-  font-family: "Montserrat", sans-serif;
-  font-size: 40px;
-  font-weight: 300;
-  font-style: italic;
-  color: #f4efe9;
+  font-family: var(--font-primary);
+  font-size: var(--ts-h2);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
+  color: var(--cj-white);
   margin: 0;
 }
 
-.sectionCta {
-  text-align: center;
-  margin-top: 48px;
+/* ── Layout dividido (Obras + Técnicas) ──────────────────────── */
+.splitSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--cj-border);
 }
+
+@media (max-width: 900px) {
+  .splitSection { grid-template-columns: 1fr; }
+}
+
+.splitLeft {
+  padding: 80px 48px 80px 32px;
+  border-right: 1px solid var(--cj-border);
+}
+
+.splitRight {
+  padding: 80px 32px 80px 48px;
+}
+
+@media (max-width: 900px) {
+  .splitLeft  { padding: 60px 20px; border-right: none; border-bottom: 1px solid var(--cj-border); }
+  .splitRight { padding: 60px 20px; }
+}
+
+.splitHeader {
+  margin-bottom: 40px;
+}
+
+.splitCta {
+  margin-top: 40px;
+}
+
+.ctaLink {
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cj-red);
+  text-decoration: none;
+  transition: opacity var(--dur-base);
+}
+
+.ctaLink:hover { opacity: 0.7; }
 
 /* ── Obras destacadas ────────────────────────────────────────── */
-.featured {
-  padding: 80px 24px;
-  border-bottom: 1px solid #2c2c2c;
-}
-
 .featuredGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-@media (max-width: 768px) {
-  .featuredGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .featuredGrid {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
 }
 
 .featuredCard {
@@ -139,7 +98,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-enter) var(--ease-out);
 }
 
 .featuredCard:hover .featuredImgEl {
@@ -149,105 +108,99 @@
 .imgPlaceholder {
   width: 100%;
   height: 100%;
-  min-height: 240px;
+  min-height: 200px;
   background: #1a1a1a;
 }
 
 .featuredInfo {
-  padding: 12px 0 0;
+  padding: 10px 0 0;
 }
 
 .featuredTitle {
-  font-family: "Montserrat", sans-serif;
-  font-size: 17px;
-  font-style: italic;
-  color: #f4efe9;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--cj-white);
   margin: 0 0 3px;
 }
 
 .featuredYear {
+  font-family: var(--font-primary);
   font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.18em;
-  color: #c41e1e;
+  color: var(--cj-red);
   margin: 0;
 }
 
 /* ── Técnicas ────────────────────────────────────────────────── */
-.techniques {
-  padding: 80px 24px;
-  border-bottom: 1px solid #2c2c2c;
-}
-
 .techniquesGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1px;
-  background: #2c2c2c;
-  max-width: 1200px;
-  margin: 0 auto;
-  border: 1px solid #2c2c2c;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
 }
 
 .techCard {
-  background: #090909;
-  padding: 40px 32px;
+  background: var(--cj-black-soft);
+  padding: 28px 24px;
   text-decoration: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: background 0.2s;
+  transition: background var(--dur-base);
   position: relative;
+  border: 1px solid var(--cj-border);
 }
 
 .techCard:hover {
-  background: #111111;
+  background: #1a1a1a;
+}
+
+.techTopLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--cj-red);
 }
 
 .techName {
-  font-family: "Montserrat", sans-serif;
-  font-size: 28px;
-  font-weight: 300;
-  font-style: italic;
-  color: #f4efe9;
-  margin: 0;
-}
-
-.techCount {
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #c41e1e;
+  font-family: var(--font-primary);
+  font-size: var(--ts-h3);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.01em;
+  color: var(--cj-white);
   margin: 0;
 }
 
 .techDesc {
-  font-size: 13px;
-  color: #6a6560;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: var(--fw-light);
+  color: var(--cj-gray);
   line-height: 1.6;
-  margin: 4px 0 0;
+  margin: 0;
+  flex: 1;
 }
 
-.techArrow {
-  font-size: 18px;
-  color: #3f3d3a;
-  margin-top: auto;
-  padding-top: 16px;
-  transition:
-    color 0.2s,
-    transform 0.2s;
+.techCount {
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cj-red);
+  margin-top: 8px;
 }
 
-.techCard:hover .techArrow {
-  color: #c41e1e;
-  transform: translateX(4px);
-}
-
-/* ── Visión del Dueño ────────────────────────────────────────── */
+/* ── Visión del artista ──────────────────────────────────────── */
 .ownerVision {
-  padding: 100px 24px;
+  padding: 100px 32px;
   background: #0d0d0d;
-  border-top: 1px solid #2c2c2c;
-  border-bottom: 1px solid #2c2c2c;
+  border-top: 1px solid var(--cj-border);
+  border-bottom: 1px solid var(--cj-border);
   text-align: center;
 }
 
@@ -261,47 +214,49 @@
 }
 
 .ownerVisionEyebrow {
-  font-size: 10px;
+  font-family: var(--font-primary);
+  font-size: var(--ts-label);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #c41e1e;
+  color: var(--cj-red);
   margin: 0;
 }
 
 .ownerVisionName {
-  font-family: "Montserrat", sans-serif;
+  font-family: var(--font-primary);
   font-size: clamp(24px, 4vw, 36px);
-  font-weight: 300;
-  font-style: italic;
-  color: #f4efe9;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
+  color: var(--cj-white);
   margin: 0;
-  letter-spacing: 0.04em;
 }
 
 .ownerVisionQuote {
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(22px, 3.5vw, 32px);
-  font-style: italic;
-  font-weight: 300;
-  color: #c6bdb3;
+  font-family: var(--font-primary);
+  font-size: clamp(18px, 2.5vw, 26px);
+  font-weight: var(--fw-light);
+  color: var(--cj-white-dim);
   margin: 0;
   padding: 0 0 0 20px;
-  border-left: 2px solid #c41e1e;
+  border-left: 2px solid var(--cj-red);
   text-align: left;
   align-self: stretch;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .ownerVisionExcerpt {
+  font-family: var(--font-primary);
   font-size: 15px;
-  color: #6a6560;
+  font-weight: var(--fw-light);
+  color: var(--cj-gray);
   line-height: 1.8;
   margin: 0;
 }
 
 /* ── Contacto ────────────────────────────────────────────────── */
 .contact {
-  padding: 80px 24px;
+  padding: 100px 32px;
   text-align: center;
 }
 
@@ -311,36 +266,69 @@
 }
 
 .contactTitle {
-  font-family: "Montserrat", sans-serif;
-  font-size: 36px;
-  font-weight: 300;
-  font-style: italic;
-  color: #f4efe9;
+  font-family: var(--font-primary);
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
+  color: var(--cj-white);
   margin: 0 0 16px;
 }
 
 .contactText {
+  font-family: var(--font-primary);
   font-size: 15px;
-  color: #6a6560;
+  font-weight: var(--fw-light);
+  color: var(--cj-gray);
   line-height: 1.7;
   margin: 0 0 32px;
 }
 
-.ctaSecondary {
+.contactCtas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.heroCta {
   display: inline-block;
   padding: 14px 36px;
-  border: 1px solid #2c2c2c;
-  color: #c6bdb3;
+  background: var(--cj-red);
+  color: var(--cj-white);
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   text-decoration: none;
-  transition:
-    border-color 0.2s,
-    color 0.2s;
+  transition: background var(--dur-base);
+}
+
+.heroCta:hover { background: var(--cj-red-bright); }
+
+.ctaSecondary {
+  display: inline-block;
+  padding: 14px 36px;
+  border: 1px solid var(--cj-border);
+  color: var(--cj-white-dim);
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: border-color var(--dur-base), color var(--dur-base);
 }
 
 .ctaSecondary:hover {
-  border-color: #c41e1e;
-  color: #c41e1e;
+  border-color: var(--cj-red);
+  color: var(--cj-red);
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .ownerVision,
+  .contact { padding: 60px 20px; }
+  .techniquesGrid { grid-template-columns: 1fr; }
 }

@@ -1,11 +1,11 @@
 /* components/modal/ArtworkModal.module.css */
 
-/* ── Backdrop ────────────────────────────────────────────────────────── */
+/* ── Backdrop ────────────────────────────────────────────────────── */
 .backdrop {
   position: fixed;
   inset: 0;
-  z-index: 200;
-  background: rgba(0, 0, 0, 0.9);
+  z-index: var(--z-modal-bg, 200);
+  background: rgba(0, 0, 0, 0.92);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,11 +13,11 @@
   backdrop-filter: blur(2px);
 }
 
-/* ── Modal container ─────────────────────────────────────────────────── */
+/* ── Modal container ─────────────────────────────────────────────── */
 .modal {
   position: relative;
-  background: #111111;
-  border: 1px solid #2c2c2c;
+  background: var(--cj-black-soft);
+  border: 1px solid var(--cj-border);
   width: 100%;
   max-width: 960px;
   max-height: 90vh;
@@ -41,14 +41,12 @@
     overflow-y: auto;
   }
 
-  /* T-04: panel de imagen menos alto en pantallas pequeñas */
   .imagePanel {
     min-height: 220px;
     max-height: 45vh;
     padding: 16px;
   }
 
-  /* T-05: mover botones de navegación dentro del flujo del panel imagen */
   .navBtns {
     position: relative;
     bottom: auto;
@@ -59,26 +57,26 @@
   }
 }
 
-/* ── Botón cerrar ────────────────────────────────────────────────────── */
+/* ── Botón cerrar ────────────────────────────────────────────────── */
 .closeBtn {
   position: absolute;
   top: 10px;
   right: 10px;
   z-index: 10;
-  width: 44px;   /* T-02: mínimo 44px para touch target WCAG */
+  width: 44px;
   height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(17, 17, 17, 0.8);
-  border: 1px solid #2c2c2c;
-  color: #6a6560;
-  transition: color 0.2s, border-color 0.2s;
+  border: 1px solid var(--cj-border);
+  color: var(--cj-gray);
+  transition: color var(--dur-base), border-color var(--dur-base);
 }
 
-.closeBtn:hover { color: #f4efe9; border-color: #6a6560; }
+.closeBtn:hover { color: var(--cj-white); border-color: var(--cj-gray); }
 
-/* ── Navegación ←→ ──────────────────────────────────────────────────── */
+/* ── Navegación ←→ ──────────────────────────────────────────────── */
 .navBtns {
   position: absolute;
   bottom: 16px;
@@ -90,20 +88,20 @@
 }
 
 .navBtn {
-  width: 44px;   /* T-03: mínimo 44px para touch target WCAG */
+  width: 44px;
   height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #181818;
-  border: 1px solid #2c2c2c;
-  color: #6a6560;
-  transition: color 0.2s, border-color 0.2s;
+  background: var(--cj-surface);
+  border: 1px solid var(--cj-border);
+  color: var(--cj-gray);
+  transition: color var(--dur-base), border-color var(--dur-base);
 }
 
 .navBtn:hover:not(:disabled) {
-  color: #c41e1e;
-  border-color: #8b1a1a;
+  color: var(--cj-red);
+  border-color: var(--cj-red-dim);
 }
 
 .navBtn:disabled {
@@ -112,15 +110,16 @@
 }
 
 .navCount {
+  font-family: var(--font-primary);
   font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.12em;
-  color: #3f3d3a;
-  font-family: 'Archivo', sans-serif;
+  color: var(--cj-gray-dim);
   min-width: 36px;
   text-align: center;
 }
 
-/* ── Panel imagen ────────────────────────────────────────────────────── */
+/* ── Panel imagen ────────────────────────────────────────────────── */
 .imagePanel {
   background: #0d0d0d;
   display: flex;
@@ -167,7 +166,7 @@
   to   { opacity: 1; }
 }
 
-/* ── Thumbnails ──────────────────────────────────────────────────────── */
+/* ── Thumbnails ──────────────────────────────────────────────────── */
 .thumbRow {
   display: flex;
   gap: 6px;
@@ -181,16 +180,16 @@
   height: 44px;
   overflow: hidden;
   background: #1a1a1a;
-  border: 1px solid #2c2c2c;
-  transition: border-color 0.2s;
+  border: 1px solid var(--cj-border);
+  transition: border-color var(--dur-base);
   padding: 0;
   flex-shrink: 0;
 }
 
-.thumb:hover { border-color: #6a6560; }
+.thumb:hover { border-color: var(--cj-gray); }
 
 .thumbActive {
-  border-color: #c41e1e !important;
+  border-color: var(--cj-red) !important;
 }
 
 .thumbImg {
@@ -199,38 +198,41 @@
   object-fit: cover;
 }
 
-/* ── Panel info ──────────────────────────────────────────────────────── */
+/* ── Panel info ──────────────────────────────────────────────────── */
 .infoPanel {
   padding: 32px 28px 24px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   scrollbar-width: thin;
-  scrollbar-color: #2c2c2c transparent;
+  scrollbar-color: var(--cj-border) transparent;
 }
 
 .techniqueTag {
+  font-family: var(--font-primary);
   font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #c41e1e;
+  color: var(--cj-red);
   margin: 0 0 8px;
-  font-family: 'Archivo', sans-serif;
 }
 
 .mediumTag {
-  color: #6a6560;
+  font-family: var(--font-primary);
+  color: var(--cj-gray);
   text-transform: none;
   letter-spacing: 0;
   font-size: 10px;
+  font-weight: 400;
 }
 
 .title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 30px;
-  font-weight: 300;
-  font-style: italic;
-  color: #f4efe9;
+  font-family: var(--font-primary);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--cj-white);
   line-height: 1.15;
   margin: 0 0 8px;
 }
@@ -244,45 +246,49 @@
 }
 
 .year, .dims, .edition {
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: 400;
   letter-spacing: 0.12em;
-  color: #6a6560;
-  font-family: 'Archivo', sans-serif;
+  color: var(--cj-gray);
 }
 
 .metaSep {
-  color: #3f3d3a;
+  color: var(--cj-gray-dim);
   font-size: 11px;
 }
 
 .collection {
+  font-family: var(--font-primary);
   font-size: 11px;
-  color: #3f3d3a;
+  font-weight: 400;
+  color: var(--cj-gray-dim);
   margin: 0;
-  font-family: 'Archivo', sans-serif;
 }
 
 .collection strong {
-  color: #6a6560;
-  font-weight: 400;
+  color: var(--cj-gray);
+  font-weight: 500;
 }
 
 .divider {
   height: 1px;
-  background: #2c2c2c;
+  background: var(--cj-border);
   margin: 16px 0;
 }
 
 .description {
+  font-family: var(--font-primary);
   font-size: 13px;
+  font-weight: var(--fw-light);
   line-height: 1.8;
-  color: #c6bdb3;
+  color: var(--cj-white-dim);
   margin: 0;
 }
 
 .spacer { flex: 1; min-height: 20px; }
 
-/* ── Precio y disponibilidad ─────────────────────────────────────────── */
+/* ── Precio y disponibilidad ─────────────────────────────────────── */
 .priceRow {
   display: flex;
   align-items: flex-end;
@@ -291,26 +297,29 @@
 }
 
 .priceLabel {
+  font-family: var(--font-primary);
   font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #3f3d3a;
+  color: var(--cj-gray-dim);
   margin: 0 0 4px;
-  font-family: 'Archivo', sans-serif;
 }
 
 .price {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-primary);
   font-size: 28px;
-  font-weight: 400;
-  color: #f4efe9;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--cj-white);
   line-height: 1;
   margin: 0;
 }
 
 .priceCurrency {
   font-size: 13px;
-  color: #6a6560;
+  font-weight: 400;
+  color: var(--cj-gray);
 }
 
 .availBadge {
@@ -327,14 +336,15 @@
 }
 
 .availLabel {
+  font-family: var(--font-primary);
   font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #6a6560;
-  font-family: 'Archivo', sans-serif;
+  color: var(--cj-gray);
 }
 
-/* ── CTAs ────────────────────────────────────────────────────────────── */
+/* ── CTAs ────────────────────────────────────────────────────────── */
 .ctas {
   display: flex;
   flex-direction: column;
@@ -345,75 +355,73 @@
 .btnPrimary {
   width: 100%;
   padding: 14px;
-  background: #c41e1e;
-  color: #f4efe9;
-  font-family: 'Archivo', sans-serif;
+  background: var(--cj-red);
+  color: var(--cj-white);
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   border: none;
-  transition: background 0.2s;
+  transition: background var(--dur-base);
 }
 
-.btnPrimary:hover { background: #e02424; }
+.btnPrimary:hover { background: var(--cj-red-bright); }
 
 .btnSecondary {
   width: 100%;
   padding: 13px;
   background: transparent;
-  color: #c6bdb3;
-  font-family: 'Archivo', sans-serif;
+  color: var(--cj-white-dim);
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  border: 1px solid #2c2c2c;
-  transition: border-color 0.2s, color 0.2s;
+  border: 1px solid var(--cj-border);
+  transition: border-color var(--dur-base), color var(--dur-base);
 }
 
 .btnSecondary:hover,
 .btnActive {
-  border-color: #c41e1e;
-  color: #c41e1e;
+  border-color: var(--cj-red);
+  color: var(--cj-red);
 }
 
 .btnGhost {
   width: 100%;
   padding: 11px;
   background: transparent;
-  color: #6a6560;
-  font-family: 'Archivo', sans-serif;
+  color: var(--cj-gray);
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  border: 1px solid #2c2c2c;
-  transition: color 0.2s, border-color 0.2s;
+  border: 1px solid var(--cj-border);
+  transition: color var(--dur-base), border-color var(--dur-base);
 }
 
 .btnGhost:hover {
-  color: #c6bdb3;
-  border-color: #6a6560;
+  color: var(--cj-white-dim);
+  border-color: var(--cj-border-2);
 }
 
-/* ── Panel prints ────────────────────────────────────────────────────── */
+/* ── Panel prints ────────────────────────────────────────────────── */
 .printsPanel {
-  border: 1px solid #2c2c2c;
+  border: 1px solid var(--cj-border);
   padding: 14px;
   margin-bottom: 12px;
-  animation: fadeIn 0.25s ease both;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
 
 .printsTitle {
+  font-family: var(--font-primary);
   font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #6a6560;
+  color: var(--cj-gray);
   margin: 0 0 10px;
-  font-family: 'Archivo', sans-serif;
 }
 
 .printRow {
@@ -427,17 +435,19 @@
 .printRow:last-child { border-bottom: none; }
 
 .printSize {
+  font-family: var(--font-primary);
   font-size: 12px;
-  color: #c6bdb3;
+  font-weight: 500;
+  color: var(--cj-white-dim);
   margin: 0 0 2px;
-  font-family: 'Archivo', sans-serif;
 }
 
 .printPaper {
+  font-family: var(--font-primary);
   font-size: 10px;
-  color: #6a6560;
+  font-weight: 400;
+  color: var(--cj-gray);
   margin: 0;
-  font-family: 'Archivo', sans-serif;
 }
 
 .printRight {
@@ -447,28 +457,30 @@
 }
 
 .printPrice {
+  font-family: var(--font-primary);
   font-size: 13px;
-  color: #f4efe9;
+  font-weight: 500;
+  color: var(--cj-white);
   margin: 0;
-  font-family: 'Cormorant Garamond', serif;
   white-space: nowrap;
 }
 
 .btnPrintBuy {
-  font-family: 'Archivo', sans-serif;
+  font-family: var(--font-primary);
   font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   padding: 5px 10px;
-  border: 1px solid #2c2c2c;
-  color: #c6bdb3;
+  border: 1px solid var(--cj-border);
+  color: var(--cj-white-dim);
   background: transparent;
-  transition: border-color 0.2s, color 0.2s;
+  transition: border-color var(--dur-base), color var(--dur-base);
 }
 
 .btnPrintBuy:hover:not(:disabled) {
-  border-color: #c41e1e;
-  color: #c41e1e;
+  border-color: var(--cj-red);
+  color: var(--cj-red);
 }
 
 .btnPrintBuy:disabled {
@@ -476,38 +488,38 @@
   cursor: not-allowed;
 }
 
-/* ── Share ───────────────────────────────────────────────────────────── */
+.btnPrintInCart {
+  border-color: var(--cj-red-dim);
+  color: var(--cj-red);
+}
+
+/* ── Share ───────────────────────────────────────────────────────── */
 .shareBtn {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-family: 'Archivo', sans-serif;
+  font-family: var(--font-primary);
   font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #3f3d3a;
+  color: var(--cj-gray-dim);
   padding: 0;
   margin-top: 4px;
-  transition: color 0.2s;
+  transition: color var(--dur-base);
   background: transparent;
   border: none;
 }
 
-.shareBtn:hover { color: #6a6560; }
+.shareBtn:hover { color: var(--cj-gray); }
 
-/* ── Estados de carga / error ────────────────────────────────────────── */
+/* ── Estados de carga / error ────────────────────────────────────── */
 .loadingSkeleton { padding: 0; }
 
 .skLine {
   background: #1a1a1a;
   animation: shimmer 1.6s ease-in-out infinite;
   margin-bottom: 8px;
-}
-
-.skDivider {
-  height: 1px;
-  background: #1a1a1a;
-  margin: 20px 0;
 }
 
 .errorState {
@@ -518,8 +530,8 @@
 }
 
 .errorText {
+  font-family: var(--font-primary);
   font-size: 13px;
-  color: #6a6560;
+  color: var(--cj-gray);
   text-align: center;
 }
-

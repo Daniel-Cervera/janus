@@ -1,28 +1,30 @@
 /* pages/biography/Biography.module.css */
 
 .page {
-  background: #090909;
+  background: var(--cj-black);
   min-height: 100vh;
-  color: #f4efe9;
-  font-family: 'Archivo', sans-serif;
+  color: var(--cj-white);
+  font-family: var(--font-primary);
 }
 
 /* ── Navegación de regreso ────────────────────────────────────── */
 .backNav {
-  padding: 20px 24px;
+  padding: 20px 32px;
   border-bottom: 1px solid #1a1a1a;
 }
 
 .backLink {
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: var(--fw-medium);
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #6a6560;
+  color: var(--cj-gray);
   text-decoration: none;
-  transition: color 0.2s;
+  transition: color var(--dur-base);
 }
 
-.backLink:hover { color: #c41e1e; }
+.backLink:hover { color: var(--cj-red); }
 
 /* ── Hero editorial ──────────────────────────────────────────── */
 .hero {
@@ -30,38 +32,41 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 80px 24px;
-  border-bottom: 1px solid #2c2c2c;
+  padding: 80px 32px;
+  border-bottom: 1px solid var(--cj-border);
   text-align: center;
 }
 
 .heroInner { max-width: 680px; }
 
 .eyebrow {
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: var(--fw-medium);
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: #c41e1e;
+  color: var(--cj-red);
   margin: 0 0 24px;
 }
 
 .heroTitle {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(72px, 14vw, 140px);
-  font-weight: 300;
-  font-style: italic;
-  color: #f4efe9;
+  font-family: var(--font-primary);
+  font-size: var(--ts-hero);
+  font-weight: var(--fw-extrabold);
+  letter-spacing: -0.03em;
+  color: var(--cj-white);
   line-height: 0.9;
-  letter-spacing: -0.02em;
   margin: 0 0 32px;
+  text-transform: uppercase;
+  text-shadow: var(--shadow-text-hero);
 }
 
 .heroQuote {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(18px, 3vw, 24px);
-  font-style: italic;
-  color: #c6bdb3;
-  line-height: 1.5;
+  font-family: var(--font-primary);
+  font-size: clamp(15px, 2.5vw, 20px);
+  font-weight: var(--fw-light);
+  color: var(--cj-white-dim);
+  line-height: 1.6;
   margin: 0;
 }
 
@@ -69,13 +74,13 @@
 .container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 32px;
 }
 
 /* ── Statement ───────────────────────────────────────────────── */
 .statementSection {
   padding: 80px 0;
-  border-bottom: 1px solid #2c2c2c;
+  border-bottom: 1px solid var(--cj-border);
 }
 
 .statementGrid {
@@ -86,26 +91,25 @@
 }
 
 @media (max-width: 900px) {
-  .statementGrid {
-    grid-template-columns: 1fr;
-    gap: 48px;
-  }
+  .statementGrid { grid-template-columns: 1fr; gap: 48px; }
 }
 
 .statementHeading {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 13px;
-  font-weight: 400;
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: #c41e1e;
+  color: var(--cj-red);
   margin: 0 0 32px;
 }
 
 .paragraph {
+  font-family: var(--font-primary);
   font-size: 16px;
+  font-weight: var(--fw-light);
   line-height: 1.9;
-  color: #c6bdb3;
+  color: var(--cj-white-dim);
   margin: 0 0 24px;
 }
 
@@ -120,6 +124,7 @@
 .artistPhoto {
   background: #1a1a1a;
   overflow: hidden;
+  border-left: 1px solid var(--cj-red);
 }
 
 .artistImg {
@@ -131,39 +136,41 @@
 
 .photoCaption {
   padding: 16px;
-  border-top: 1px solid #2c2c2c;
+  border-top: 1px solid var(--cj-border);
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .captionName {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 16px;
-  font-style: italic;
-  color: #f4efe9;
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+  color: var(--cj-white);
 }
 
 .captionDesc {
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: var(--fw-medium);
   letter-spacing: 0.12em;
-  color: #6a6560;
+  color: var(--cj-gray);
   text-transform: uppercase;
 }
 
 /* ── Influencias ─────────────────────────────────────────────── */
 .influencesSection {
   padding: 80px 0;
-  border-bottom: 1px solid #2c2c2c;
+  border-bottom: 1px solid var(--cj-border);
 }
 
 .influencesHeading {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 13px;
-  font-weight: 400;
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: #c41e1e;
+  color: var(--cj-red);
   margin: 0 0 32px;
 }
 
@@ -177,16 +184,16 @@
 }
 
 .influenceItem {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 22px;
-  font-style: italic;
-  color: #6a6560;
-  transition: color 0.2s;
+  font-family: var(--font-primary);
+  font-size: 20px;
+  font-weight: var(--fw-light);
+  color: var(--cj-gray);
+  transition: color var(--dur-base);
 }
 
-.influenceItem:hover { color: #f4efe9; }
+.influenceItem:hover { color: var(--cj-white); }
 
-/* ── Sección de contacto / formulario ───────────────────────── */
+/* ── Sección de contacto ─────────────────────────────────────── */
 .contactSection {
   padding: 100px 0;
 }
@@ -199,33 +206,34 @@
 }
 
 @media (max-width: 768px) {
-  .contactGrid {
-    grid-template-columns: 1fr;
-    gap: 48px;
-  }
+  .contactGrid { grid-template-columns: 1fr; gap: 48px; }
 }
 
 .contactEyebrow {
-  font-size: 10px;
+  font-family: var(--font-primary);
+  font-size: var(--ts-label);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #c41e1e;
+  color: var(--cj-red);
   margin: 0 0 20px;
 }
 
 .contactTitle {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(26px, 3vw, 36px);
-  font-weight: 300;
-  font-style: italic;
-  color: #f4efe9;
-  line-height: 1.3;
+  font-family: var(--font-primary);
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
+  color: var(--cj-white);
+  line-height: 1.2;
   margin: 0 0 16px;
 }
 
 .contactText {
+  font-family: var(--font-primary);
   font-size: 15px;
-  color: #6a6560;
+  font-weight: var(--fw-light);
+  color: var(--cj-gray);
   line-height: 1.8;
   margin: 0 0 32px;
 }
@@ -237,11 +245,19 @@
 }
 
 .socialLink {
+  font-family: var(--font-primary);
   font-size: 13px;
-  color: #6a6560;
+  font-weight: 400;
+  color: var(--cj-gray);
   text-decoration: none;
-  transition: color 0.2s;
+  transition: color var(--dur-base);
   letter-spacing: 0.05em;
 }
 
-.socialLink:hover { color: #c41e1e; }
+.socialLink:hover { color: var(--cj-red); }
+
+@media (max-width: 640px) {
+  .hero { padding: 60px 20px; }
+  .container { padding: 0 20px; }
+  .backNav { padding: 20px; }
+}

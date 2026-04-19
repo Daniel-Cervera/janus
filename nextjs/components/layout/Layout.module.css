@@ -1,36 +1,40 @@
+/* components/layout/Layout.module.css */
+
+/* ── Header — estrictamente estático, sin blur ───────────────────── */
 .header {
   position: sticky;
   top: 0;
-  z-index: 100;
-  background: rgba(9, 9, 9, 0.95);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid #2c2c2c;
+  z-index: var(--z-nav, 100);
+  background: var(--cj-black);
+  border-bottom: 1px solid var(--cj-border);
 }
 
 .nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
-  padding: 0 24px;
+  height: 60px;
+  padding: 0 32px;
   max-width: 1400px;
   margin: 0 auto;
 }
 
+/* ── Logo ────────────────────────────────────────────────────────── */
 .logo {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 20px;
-  font-weight: 300;
-  letter-spacing: 0.15em;
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #f4efe9;
+  color: var(--cj-white);
   text-decoration: none;
 }
 
 .logoAccent {
-  color: #c41e1e;
+  color: var(--cj-red);
 }
 
+/* ── Nav links ───────────────────────────────────────────────────── */
 .navLinks {
   display: flex;
   list-style: none;
@@ -40,39 +44,46 @@
 }
 
 .navLink {
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #6a6560;
+  color: var(--cj-gray);
   text-decoration: none;
-  transition: color 0.2s;
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+  transition: color var(--dur-base), border-color var(--dur-base);
 }
 
-.navLink:hover,
+.navLink:hover {
+  color: var(--cj-red);
+}
+
 .navLinkActive {
-  color: #c41e1e;
+  color: var(--cj-red);
+  border-bottom-color: var(--cj-red);
 }
 
+/* ── Cart button ─────────────────────────────────────────────────── */
 .cartBtn {
   position: relative;
   background: transparent;
-  border: 1px solid #2c2c2c;
-  color: #6a6560;
+  border: 1px solid var(--cj-border);
+  color: var(--cj-gray);
   width: 36px;
   height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition:
-    color 0.2s,
-    border-color 0.2s;
+  transition: color var(--dur-base), border-color var(--dur-base);
   font-size: 16px;
 }
 
 .cartBtn:hover {
-  color: #f4efe9;
-  border-color: #6a6560;
+  color: var(--cj-white);
+  border-color: var(--cj-gray);
 }
 
 .cartBadge {
@@ -81,20 +92,22 @@
   right: -6px;
   width: 16px;
   height: 16px;
-  background: #c41e1e;
-  color: #f4efe9;
+  background: var(--cj-red);
+  color: var(--cj-white);
+  font-family: var(--font-primary);
   font-size: 9px;
-  font-family: "Archivo", sans-serif;
+  font-weight: 500;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* ── Footer ──────────────────────────────────────────────────────── */
 .footer {
-  border-top: 1px solid #2c2c2c;
-  padding: 40px 24px;
-  margin-top: 80px;
+  border-top: 1px solid var(--cj-border);
+  padding: 48px 32px;
+  margin-top: 100px;
 }
 
 .footerInner {
@@ -104,15 +117,16 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 24px;
 }
 
 .footerLogo {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 18px;
-  font-style: italic;
-  font-weight: 300;
-  color: #f4efe9;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cj-white);
   margin: 0;
 }
 
@@ -122,27 +136,37 @@
 }
 
 .footerLink {
+  font-family: var(--font-primary);
   font-size: 11px;
+  font-weight: 400;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #6a6560;
+  color: var(--cj-gray);
   text-decoration: none;
-  transition: color 0.2s;
+  transition: color var(--dur-fast);
 }
 
 .footerLink:hover {
-  color: #c41e1e;
+  color: var(--cj-red);
 }
 
 .footerCopy {
+  font-family: var(--font-primary);
   font-size: 11px;
-  color: #3f3d3a;
+  color: var(--cj-gray-dim);
   margin: 0;
 }
 
+/* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 640px) {
+  .nav {
+    padding: 0 20px;
+  }
   .navLinks {
     display: none;
+  }
+  .footer {
+    padding: 48px 20px;
   }
   .footerInner {
     flex-direction: column;

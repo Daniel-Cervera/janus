@@ -1,36 +1,43 @@
+/* pages/encargos/Encargos.module.css */
+
 .page {
-  background: #090909;
+  background: var(--cj-black);
   min-height: 100vh;
-  font-family: "Archivo", sans-serif;
+  font-family: var(--font-primary);
 }
 
 .hero {
-  padding: 80px 24px 60px;
+  padding: 80px 32px 60px;
   text-align: center;
-  border-bottom: 1px solid #2c2c2c;
+  border-bottom: 1px solid var(--cj-border);
 }
 
 .eyebrow {
-  font-size: 10px;
+  font-family: var(--font-primary);
+  font-size: var(--ts-label);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #c41e1e;
+  color: var(--cj-red);
   margin: 0 0 16px;
 }
 
 .title {
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(56px, 10vw, 100px);
-  font-weight: 300;
-  font-style: italic;
-  color: #f4efe9;
+  font-family: var(--font-primary);
+  font-size: var(--ts-page-title);
+  font-weight: var(--fw-extrabold);
+  letter-spacing: -0.03em;
+  color: var(--cj-white);
   margin: 0 0 20px;
   line-height: 1;
+  text-transform: uppercase;
 }
 
 .subtitle {
-  font-size: 16px;
-  color: #6a6560;
+  font-family: var(--font-primary);
+  font-size: 15px;
+  font-weight: var(--fw-light);
+  color: var(--cj-gray);
   max-width: 520px;
   margin: 0 auto;
   line-height: 1.7;
@@ -39,69 +46,88 @@
 .container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 80px 24px;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 80px;
-  align-items: start;
-}
-
-@media (max-width: 768px) {
-  .grid {
-    grid-template-columns: 1fr;
-    gap: 48px;
-  }
-}
-
-.infoTitle {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 13px;
-  font-weight: 400;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: #c41e1e;
-  margin: 0 0 32px;
-}
-
-.steps {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  padding: 80px 32px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 80px;
+}
+
+/* ── Sección de proceso ──────────────────────────────────────── */
+.processSection {}
+
+.processTitle {
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--cj-red);
+  margin: 0 0 40px;
+}
+
+.stepsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+
+@media (max-width: 640px) {
+  .stepsGrid { grid-template-columns: 1fr; }
 }
 
 .step {
+  background: var(--cj-black-soft);
+  border: 1px solid var(--cj-border);
+  padding: 36px 32px;
   display: flex;
-  gap: 20px;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .stepNum {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 32px;
-  font-weight: 300;
-  color: #2c2c2c;
+  font-family: var(--font-primary);
+  font-size: 48px;
+  font-weight: var(--fw-extrabold);
+  letter-spacing: -0.03em;
+  color: var(--cj-border-2, #2a2a2a);
   line-height: 1;
-  flex-shrink: 0;
-  width: 48px;
 }
 
 .stepTitle {
+  font-family: var(--font-primary);
   font-size: 14px;
-  font-weight: 500;
-  color: #f4efe9;
-  margin: 0 0 8px;
-  letter-spacing: 0.05em;
+  font-weight: var(--fw-semibold);
+  color: var(--cj-white);
+  margin: 0;
+  letter-spacing: 0;
 }
 
 .stepText {
+  font-family: var(--font-primary);
   font-size: 13px;
-  color: #6a6560;
+  font-weight: var(--fw-light);
+  color: var(--cj-gray);
   line-height: 1.7;
   margin: 0;
+}
+
+/* ── Sección de formulario ───────────────────────────────────── */
+.formSection {
+  max-width: 620px;
+}
+
+.formTitle {
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--cj-red);
+  margin: 0 0 40px;
+}
+
+@media (max-width: 640px) {
+  .hero { padding: 60px 20px 40px; }
+  .container { padding: 60px 20px; gap: 60px; }
+  .step { padding: 28px 20px; }
 }

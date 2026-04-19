@@ -291,7 +291,7 @@ export default function CommissionForm({
             Enviando...
           </>
         ) : (
-          'Enviar solicitud'
+          'ENVIAR SOLICITUD'
         )}
       </button>
 

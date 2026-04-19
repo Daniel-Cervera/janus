@@ -1,14 +1,14 @@
 /* styles/globals.css
- * Sistema de diseño de Casa Janus
+ * Sistema de diseño de Casa Janus v2.0
+ * Tipografía: Montserrat (única familia)
  * Paleta: Negro profundo · Rojo · Blanco hueso
- * Tipografía: Cormorant Garamond (display) + Archivo (body)
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Archivo:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
 
 /* ── Tokens de diseño ─────────────────────────────────────────────── */
 :root {
-  /* Negros */
+  /* Negros / Fondos */
   --cj-black:       #090909;
   --cj-black-soft:  #111111;
   --cj-surface:     #181818;
@@ -16,13 +16,13 @@
   --cj-border:      #2c2c2c;
   --cj-border-2:    #3a3a3a;
 
-  /* Rojos — identidad */
+  /* Rojo — identidad de marca */
   --cj-red:         #c41e1e;
   --cj-red-bright:  #e02424;
   --cj-red-dim:     #8b1a1a;
   --cj-red-ghost:   rgba(196, 30, 30, 0.08);
 
-  /* Blancos */
+  /* Blancos / Texto */
   --cj-white:       #f4efe9;
   --cj-white-dim:   #c6bdb3;
   --cj-white-ghost: rgba(244, 239, 233, 0.06);
@@ -31,19 +31,64 @@
   --cj-gray:        #6a6560;
   --cj-gray-dim:    #3f3d3a;
 
-  /* Tipografía */
-  --font-display:   'Cormorant Garamond', Georgia, serif;
-  --font-body:      'Archivo', system-ui, sans-serif;
+  /* Tipografía — única familia */
+  --font-primary:   'Montserrat', system-ui, sans-serif;
+
+  /* Pesos tipográficos */
+  --fw-light:     300;
+  --fw-regular:   400;
+  --fw-medium:    500;
+  --fw-semibold:  600;
+  --fw-bold:      700;
+  --fw-extrabold: 800;
+
+  /* Escala tipográfica */
+  --ts-hero:       clamp(72px, 13vw, 150px);
+  --ts-page-title: clamp(40px, 6vw, 84px);
+  --ts-h2:         clamp(28px, 4vw, 48px);
+  --ts-h3:         22px;
+  --ts-body-lg:    15px;
+  --ts-body:       14px;
+  --ts-label:      10px;
+  --ts-caption:    11px;
+  --ts-micro:      9px;
+
+  /* Espaciado */
+  --sp-2:   2px;
+  --sp-4:   4px;
+  --sp-8:   8px;
+  --sp-12:  12px;
+  --sp-16:  16px;
+  --sp-20:  20px;
+  --sp-24:  24px;
+  --sp-32:  32px;
+  --sp-40:  40px;
+  --sp-48:  48px;
+  --sp-64:  64px;
+  --sp-80:  80px;
+  --sp-100: 100px;
+  --sp-120: 120px;
 
   /* Transiciones */
-  --ease-out:       cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out:    cubic-bezier(0.45, 0, 0.55, 1);
+  --ease-out:     cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:  cubic-bezier(0.45, 0, 0.55, 1);
+  --dur-fast:     0.15s;
+  --dur-base:     0.2s;
+  --dur-smooth:   0.35s;
+  --dur-enter:    0.55s;
+
+  /* Sombras */
+  --shadow-panel:     0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-text-hero: 0 2px 40px rgba(0, 0, 0, 0.5), 0 0 80px rgba(0, 0, 0, 0.3);
 
   /* Z-index */
-  --z-nav:          100;
-  --z-modal-bg:     200;
-  --z-modal:        210;
-  --z-toast:        300;
+  --z-nav:      100;
+  --z-fab:      150;
+  --z-modal-bg: 200;
+  --z-modal:    210;
+  --z-drawer:   220;
+  --z-toast:    300;
+  --z-tweaks:   400;
 }
 
 /* ── Reset ────────────────────────────────────────────────────────── */
@@ -61,7 +106,8 @@ html {
 body {
   background: var(--cj-black);
   color: var(--cj-white);
-  font-family: var(--font-body);
+  font-family: var(--font-primary);
+  font-weight: var(--fw-regular);
   font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -83,8 +129,8 @@ body {
 
 /* ── Tipografía base ──────────────────────────────────────────────── */
 h1, h2, h3, h4 {
-  font-family: var(--font-display);
-  font-weight: 300;
+  font-family: var(--font-primary);
+  font-weight: var(--fw-bold);
   line-height: 1.1;
   color: var(--cj-white);
 }
@@ -102,36 +148,31 @@ img, video {
 }
 
 button {
-  font-family: var(--font-body);
+  font-family: var(--font-primary);
   cursor: pointer;
   border: none;
   background: none;
 }
 
+input, textarea, select {
+  font-family: var(--font-primary);
+}
+
 /* ── Clases utilitarias ───────────────────────────────────────────── */
 .label-xs {
-  font-size: 10px;
+  font-family: var(--font-primary);
+  font-size: var(--ts-label);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: var(--fw-medium);
 }
 
 .label-sm {
-  font-size: 11px;
+  font-family: var(--font-primary);
+  font-size: var(--ts-caption);
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  font-weight: 400;
-}
-
-.display-serif {
-  font-family: var(--font-display);
-  font-weight: 300;
-}
-
-.display-italic {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 300;
+  font-weight: var(--fw-medium);
 }
 
 /* ── Focus visible ────────────────────────────────────────────────── */
@@ -140,7 +181,7 @@ button {
   outline-offset: 2px;
 }
 
-/* ── Animación de entrada global ──────────────────────────────────── */
+/* ── Animaciones globales ─────────────────────────────────────────── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
