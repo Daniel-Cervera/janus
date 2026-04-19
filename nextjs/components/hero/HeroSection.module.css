@@ -7,40 +7,83 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--cj-black);
+  overflow: hidden;
+  background: #090909;
+}
+
+/* ── Fondo de video ───────────────────────────────────────────── */
+.videoBackground {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   overflow: hidden;
 }
 
-.hero::before {
-  content: '';
+.fallbackImage {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(44, 44, 44, 0.25) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(44, 44, 44, 0.25) 1px, transparent 1px);
-  background-size: 80px 80px;
-  opacity: 0.4;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  filter: blur(8px) brightness(0.7);
+  transform: scale(1.05);
+}
+
+.fallbackVisible { opacity: 1; }
+
+.videoIframe {
+  position: absolute;
+  width: max(100%, calc(100vh * 16 / 9));
+  height: max(100%, calc(100vw * 9 / 16));
+  top: 50%;
+  left: 50%;
+  border: none;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 1s ease;
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.videoVisible { opacity: 1; }
+
+.blurLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  backdrop-filter: blur(12px) brightness(0.8);
+  -webkit-backdrop-filter: blur(12px) brightness(0.8);
   pointer-events: none;
 }
 
-.hero::after {
-  content: '';
+.overlayLayer {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 1px;
-  height: 40%;
-  background: var(--cj-red);
-  opacity: 0.6;
+  inset: 0;
+  z-index: 4;
+  background: radial-gradient(
+    ellipse 80% 70% at 50% 50%,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.72) 100%
+  );
+  pointer-events: none;
 }
 
+/* ── Contenido ────────────────────────────────────────────────── */
 .content {
   position: relative;
   z-index: 10;
   text-align: center;
   padding: 0 24px;
-  max-width: 900px;
+  max-width: 800px;
   width: 100%;
+  animation: heroFadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+}
+
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .eyebrow {
@@ -53,6 +96,7 @@
   margin: 0 0 32px;
 }
 
+/* ── Headline CASA / JANUS ────────────────────────────────────── */
 .headline {
   font-family: var(--font-primary);
   font-size: var(--ts-hero);
@@ -67,15 +111,8 @@
   align-items: center;
 }
 
-.headlineWhite {
-  color: var(--cj-white);
-  display: block;
-}
-
-.headlineRed {
-  color: var(--cj-red);
-  display: block;
-}
+.headlineWhite { color: var(--cj-white); display: block; }
+.headlineRed   { color: var(--cj-red);   display: block; }
 
 .tagline {
   font-family: var(--font-primary);
@@ -83,11 +120,12 @@
   font-weight: var(--fw-light);
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(244, 239, 233, 0.45);
+  color: rgba(244, 239, 233, 0.55);
   margin: 0 0 52px;
   line-height: 1.6;
 }
 
+/* ── CTAs ─────────────────────────────────────────────────────── */
 .ctaGroup {
   display: flex;
   align-items: center;
@@ -98,25 +136,28 @@
 
 .ctaPrimary {
   display: inline-block;
-  padding: 14px 36px;
+  padding: 16px 40px;
   background: var(--cj-red);
   color: var(--cj-white);
   font-family: var(--font-primary);
   font-size: 11px;
   font-weight: var(--fw-medium);
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   text-decoration: none;
-  transition: background var(--dur-base);
+  outline: 1px solid rgba(196, 30, 30, 0.4);
+  outline-offset: 3px;
+  transition: background var(--dur-base), transform var(--dur-base);
 }
 
 .ctaPrimary:hover {
   background: var(--cj-red-bright);
+  transform: translateY(-1px);
 }
 
 .ctaSecondary {
   display: inline-block;
-  padding: 13px 36px;
+  padding: 15px 36px;
   background: transparent;
   color: rgba(244, 239, 233, 0.85);
   font-family: var(--font-primary);
@@ -126,12 +167,15 @@
   text-transform: uppercase;
   text-decoration: none;
   border: 1px solid rgba(244, 239, 233, 0.3);
-  transition: border-color var(--dur-base), color var(--dur-base);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: border-color var(--dur-base), color var(--dur-base), transform var(--dur-base);
 }
 
 .ctaSecondary:hover {
   border-color: rgba(244, 239, 233, 0.7);
   color: var(--cj-white);
+  transform: translateY(-1px);
 }
 
 /* ── Scroll hints ─────────────────────────────────────────────── */
@@ -139,13 +183,13 @@
 .scrollHintRight {
   position: absolute;
   bottom: 32px;
+  z-index: 10;
   font-family: var(--font-primary);
   font-size: 9px;
   font-weight: var(--fw-medium);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(244, 239, 233, 0.3);
-  z-index: 10;
+  color: rgba(244, 239, 233, 0.35);
 }
 
 .scrollHintLeft  { left: 32px; }
@@ -154,16 +198,9 @@
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .content { max-width: 520px; }
-  .ctaGroup {
-    flex-direction: column;
-    align-items: center;
-  }
+  .ctaGroup { flex-direction: column; align-items: center; }
   .ctaPrimary,
-  .ctaSecondary {
-    width: 100%;
-    text-align: center;
-    max-width: 280px;
-  }
+  .ctaSecondary { width: 100%; text-align: center; max-width: 280px; }
 }
 
 @media (max-width: 480px) {
@@ -172,9 +209,14 @@
   .tagline { letter-spacing: 0.2em; margin-bottom: 36px; }
   .scrollHintLeft,
   .scrollHintRight { display: none; }
+  .blurLayer {
+    backdrop-filter: blur(8px) brightness(0.75);
+    -webkit-backdrop-filter: blur(8px) brightness(0.75);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ctaPrimary,
-  .ctaSecondary { transition: none; }
+  .content { animation: none; opacity: 1; transform: none; }
+  .ctaPrimary:hover,
+  .ctaSecondary:hover { transform: none; }
 }
